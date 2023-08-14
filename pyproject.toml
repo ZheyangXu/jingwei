@@ -1,17 +1,19 @@
-[tool.poetry]
+[project]
 name = "jingwei"
 version = "0.1.0"
-description = "A reinforcement learning framwork."
-authors = ["ZheyangXu <jishengxzy@hotmail.com>"]
-license = "MIT"
+description = "a reinforcement learning framework."
+authors = [
+    {name = "ZheyangXu",email = "jishengxzy@hotmail.com"},
+]
+dependencies = [
+    "numpy>=1.25.2",
+    "gymnasium>=0.29.0",
+    "torch>=2.0.1",
+]
+requires-python = ">=3.9"
 readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^3.9"
-gymnasium = "^0.28.1"
-torch = "^2.0.1"
-
+license = {text = "MIT"}
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
