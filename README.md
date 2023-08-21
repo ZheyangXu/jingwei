@@ -8,15 +8,19 @@
 ```mermaid
 classDiagram
     Env <.. Trainer
-    Policy <.. Trainer
-    Actor <.. Policy
-    Critic <.. Policy
+    Algorithm <.. Trainer
+    Actor <.. Algorithm
+    Critic <.. Algorithm
     Model <.. Actor
     Model <.. Critic
     Params <.. Trainer
+    Algorithm <|.. DQNAlgorithm
+    Algorithm <|.. ActorCriticAlgorithm
+    Algorithm <|.. PolicyGradientAlgorithm
+
     class Trainer {
         + env: Env
-        + policy: Policy
+        + algorithm: Algorithm
         + run()
     }
     class Env {
@@ -24,12 +28,16 @@ classDiagram
         + step(action)
         + reset()
     }
-    class Policy {
+    class Algorithm {
         <<interface>>
         + actor: Actor
         + critic: Critic
         + take_action(observation)
         + compute_loss(observation, reward)
+        + update_fn(loss)
+        + step()
+        + estimate_return()
+        + improve_policy()
     }
     class Actor {
         <<interface>>
@@ -50,13 +58,37 @@ classDiagram
         + learning_rate: float
         + epochs: int
     }
-    class DQNPolicy {
+    class DQNAlgorithm {
 
     }
-    class PPOPolicy {
+    class ActorCriticAlgorithm {
 
     }
+    class PolicyGradientAlgorithm
 ```
+
+## 强化学习组成
+
+1. generate samples
+2. policy evaluation
+3. policy iteration
+
+|算法|General Samples|Fit a model to estimate return|Improve the Policy|
+|---|---|---|---|
+|Policy Gradient|run the policy|$\hat{Q}^\pi(x_t, u_t) = \sum\limits_{t^\prime=t}^Tr(x_{t^\prime}, u_{t^\prime})$|$\theta \leftarrow \theta + \alpha\nabla_\theta j(\theta)$|
+|Actor-Critic|run the policy|fit $\hat{V}_\phi^\pi$|$\theta \leftarrow \theta + \alpha\nabla_\theta j(\theta)$|
+|Q-Learning|run the policy|$Q_\phi(s, a) \leftarrow r(s, a)+ \gamma\max_{a^\prime}Q_\phi(s^\prime, a^\prime)$|$a = \argmax_a Q_\phi(s, a)$|
+
+|Component|Policy Gradient|Actor-Critic|DQN|
+|---|---|---|---|
+|General Sample|
+|estimate return|
+|improve policy|
+|advantage|
+|on-policy|
+|off-policy|
+|target network|
+|replay buffer|
 
 ## LICENSE
 
