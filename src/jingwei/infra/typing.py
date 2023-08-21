@@ -6,6 +6,7 @@ import torch
 import numpy as np
 
 
+StateType = Type[np.ndarray]
 ObservationType = Type[np.ndarray]
 ObservationsType = Type[List[ObservationType]]
 ValueType = Type[float]

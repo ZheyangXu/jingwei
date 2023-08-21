@@ -2,14 +2,14 @@
 
 from abc import ABC, abstractmethod
 
-from jingwei.infra.typing import ActionType, StateType, LossType
+from jingwei.infra.typing import *
 
 
-class BaseActor(ABC):
+class BaseCritic(ABC):
     @abstractmethod
-    def take_action(self, state: StateType) -> ActionType:
+    def estimate(self, state: StateType) -> ValueType:
         pass
-    
+
     @abstractmethod
     def update_fn(self, loss: LossType) -> None:
         pass
