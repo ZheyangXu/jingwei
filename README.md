@@ -44,12 +44,16 @@ classDiagram
         + model: Model
         + take_action(observation)
         + update_fn(loss)
+        + get_log_probs(states, actions)
+        + soft_update(other_model)
     }
     class Critic {
         <<interface>>
         + model: Model
-        + critic(observation)
+        + estimate_return(observation)
+        + estimate_q_value(observation, action)
         + update_fn(loss)
+        + soft_update(other_model)
     }
     class Model {
         + parameters: Parameters
@@ -67,6 +71,16 @@ classDiagram
     class PolicyGradientAlgorithm
 ```
 
+## 算法
+
+1. [DQN](https://github.com/ZheyangXu/playground/blob/main/src/playground/dqn.py)
+2. [REINFORCE](https://github.com/ZheyangXu/playground/blob/main/src/playground/reinforce.py)
+3. [A2C](https://github.com/ZheyangXu/playground/blob/main/src/playground/a2c.py)
+4. [TRPO](https://github.com/ZheyangXu/playground/blob/main/src/playground/trpo.py)
+5. [PPO](https://github.com/ZheyangXu/playground/blob/main/src/playground/ppo.py)
+6. [SAC](https://github.com/ZheyangXu/playground/blob/main/src/playground/sac.py)
+7. coming soon ...
+
 ## 强化学习组成
 
 1. generate samples
@@ -77,7 +91,7 @@ classDiagram
 |---|---|---|---|
 |Policy Gradient|run the policy|$\hat{Q}^\pi(x_t, u_t) = \sum\limits_{t^\prime=t}^Tr(x_{t^\prime}, u_{t^\prime})$|$\theta \leftarrow \theta + \alpha\nabla_\theta j(\theta)$|
 |Actor-Critic|run the policy|fit $\hat{V}_\phi^\pi$|$\theta \leftarrow \theta + \alpha\nabla_\theta j(\theta)$|
-|Q-Learning|run the policy|$Q_\phi(s, a) \leftarrow r(s, a)+ \gamma\max_{a^\prime}Q_\phi(s^\prime, a^\prime)$|$a = \argmax_a Q_\phi(s, a)$|
+|Q-Learning|run the policy|$Q_\phi(s, a) \leftarrow r(s, a)+ \gamma\max_{a^\prime}Q_\phi(s^\prime, a^\prime)$|$a = argmax_a Q_\phi(s, a)$|
 
 |Component|Policy Gradient|Actor-Critic|DQN|
 |---|---|---|---|

@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from jingwei.infra.typing import *
-from jingwei.domain.experience.base import Transition
+from jingwei.experience.base import Transition
 
 
 class BaseAlgorithm(ABC):
