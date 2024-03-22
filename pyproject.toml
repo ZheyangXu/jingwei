@@ -1,20 +1,24 @@
 [project]
 name = "jingwei"
 version = "0.1.0"
-description = "a reinforcement learning framework."
+description = "A reinforcement framework."
 authors = [
-    {name = "ZheyangXu",email = "jishengxzy@hotmail.com"},
+    {name = "ZheyangXU", email = "jishengxzy@hotmail.com"},
 ]
 dependencies = [
-    "numpy>=1.25.2",
-    "gymnasium>=0.29.0",
-    "torch>=2.0.1",
-    "jax>=0.4.14",
+    "numpy>=1.26.4",
+    "gymnasium>=0.29.1",
+    "torch>=2.2.1",
+    "dynaconf>=3.2.4",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 readme = "README.md"
 license = {text = "MIT"}
 
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
+
+
+[tool.pdm]
+distribution = true
