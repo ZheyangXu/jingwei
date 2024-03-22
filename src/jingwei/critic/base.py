@@ -7,9 +7,11 @@ from jingwei.infra.typing import *
 
 class BaseCritic(ABC):
     @abstractmethod
-    def estimate(self, state: StateType) -> ValueType:
+    def estimate_return(self, state: StateType) -> ValueType:
         pass
 
     @abstractmethod
     def update_fn(self, loss: LossType) -> None:
         pass
+
+
