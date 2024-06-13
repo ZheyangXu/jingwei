@@ -7,68 +7,125 @@
 
 ```mermaid
 classDiagram
-    Env <.. Trainer
-    Algorithm <.. Trainer
-    Actor <.. Algorithm
-    Critic <.. Algorithm
-    Model <.. Actor
-    Model <.. Critic
-    Params <.. Trainer
-    Algorithm <|.. DQNAlgorithm
-    Algorithm <|.. ActorCriticAlgorithm
-    Algorithm <|.. PolicyGradientAlgorithm
+    Agent <|.. QLearningAgent
+    Agent <|.. ActorCriticAgent
 
-    class Trainer {
-        + env: Env
-        + algorithm: Algorithm
-        + run()
-    }
-    class Env {
-        + make(env_name)
-        + step(action)
-        + reset()
-    }
-    class Algorithm {
-        <<interface>>
-        + actor: Actor
-        + critic: Critic
-        + take_action(observation)
-        + compute_loss(observation, reward)
-        + update_fn(loss)
-        + step()
-        + estimate_return()
-        + improve_policy()
-    }
-    class Actor {
-        <<interface>>
-        + model: Model
-        + take_action(observation)
-        + update_fn(loss)
-        + get_log_probs(states, actions)
-        + soft_update(other_model)
-    }
-    class Critic {
-        <<interface>>
-        + model: Model
-        + estimate_return(observation)
-        + estimate_q_value(observation, action)
-        + update_fn(loss)
-        + soft_update(other_model)
-    }
-    class Model {
-        + parameters: Parameters
-    }
-    class Params {
-        + learning_rate: float
-        + epochs: int
-    }
-    class DQNAlgorithm {
+    Transition o-- Transitions
 
-    }
-    class ActorCriticAlgorithm {
+    Actor <.. QLearningAgent
+    Distribution <.. QLearningAgent
 
-    }
-    class PolicyGradientAlgorithm
+    Actor <.. ActorCriticAgent
+    Distribution <.. ActorCriticAgent
+    Critic <.. ActorCriticAgent
+
+    Agent <.. Trainer
+    Rollout <.. Trainer
+
+    DataWrapper <.. Rollout
+    ReplayBuffer <.. Rollout
+
+    Transitions <.. ReplayBuffer
+
+    QLearningAgent <|-- DQN
+    QLearningAgent <|-- DoubleDQN
+    QLearningAgent <|-- DuelingDQN
+    
+    ActorCriticAgent <|-- PolicyGradientAgent
+    ActorCriticAgent <|-- ReinforceAgent
+    ActorCriticAgent <|-- PpoAgent
+    ActorCriticAgent <|-- A2cAgent
+    ActorCriticAgent <|-- A3cAgent
+
+
+class Trainer {
+    + agent: Agent
+    + env: Env
+    + rollout: Rollout
+    + train(): Any
+}
+
+class Actor {
+    + model: nn.Module
+    + optimizer: optim.Optimizer
+    + get_action(observation: Observation): Action
+    + get_probs(transitions: Transitions): Tensor
+    + get_log_probs(transitions: Transitions): Tensor
+    + update_step(loss: Tensor): None
+}
+
+class Critic {
+    + model: nn.Module
+    + optimizer: optim.Optimizer
+    + estimate_return(transitions: Transitions): Value
+    + update_step(loss: Tensor): None
+}
+
+class Agent {
+    <<interface>>
+    + get_action(observation: Observation): Action
+    + estimate_return(transitions: Transitions): Value
+    + update_step(transitions: Transitions): None
+}
+
+class QLearningAgent {
+    + actor: Actor
+    + distribution: Distribution
+    + actor_loss: Callable
+    + get_action(observation: Observation): Action 
+    + update_step(transitions: Transitions): None
+}
+
+class ActorCriticAgent {
+    + actor: Actor
+    + critic: Critic
+    + distribution: Distribution
+    + actor_loss_fn: Callable
+    + critic_loss_fn: Callable
+    + get_action(observation: Observation): Action
+    + estimate_return(transitions: Transitions): Value
+}
+
+class Rollout {
+    + agent: Agent
+    + env: Env
+    + replay_buffer: ReplayBuffer
+}
+
+class ReplayBuffer {
+    <<interface>>
+    + add(transitions: Transitions): int
+    + sample(batch_size: int): Transitions
+    + clear(): int
+}
+
+class Transition {
+    + state: np.ndarray
+    + reward: float
+    + action: np.ndarray
+    + next_state: np.ndarray
+    + terminated: bool
+    + truncated: bool
+    + done: bool
+}
+
+class Transitions {
+    + state: Tensor
+    + reward: Tensor
+    + action: Tensor
+    + next_state: Tensor
+    + terminated: Tensor
+    + truncated: Tensor
+    + done: Tensor
+}
+
+class DataWrapper {
+    + wrap(transitions: Transitions): Transitions
+}
+
+class PPOAgent
+
+class DQN
 ```
 
 ## 算法
