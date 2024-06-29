@@ -50,7 +50,7 @@ class TransitionBatch(NamedTuple):
         return np.logical_or(self.terminated, self.truncated)
 
 
-class TensorTransitionBatch(TransitionBatch):
+class TensorTransitionBatch(NamedTuple):
     observation: torch.Tensor
     action: torch.Tensor
     reward: torch.Tensor
