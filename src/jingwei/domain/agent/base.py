@@ -16,3 +16,7 @@ class BaseAgent(ABC):
     @abstractmethod
     def update_step(self, transitions: TransitionBatch) -> None:
         pass
+
+    @abstractmethod
+    def compute_loss(self, transitions: TransitionBatch) -> TensorType:
+        pass
