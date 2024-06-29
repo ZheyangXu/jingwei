@@ -10,7 +10,7 @@ from jingwei.transitions.base import Transition, TransitionBatch, TransitionMemb
 TransitionBufferType = TypeVar("TransitionBufferType", bound="TransitionBuffer")
 
 
-class BufferTrait(ABC):
+class BaseBuffer(ABC):
     @abstractmethod
     def sample(self, batch_size: int) -> TransitionBatch:
         pass
@@ -29,7 +29,7 @@ class BufferTrait(ABC):
         pass
 
 
-class TransitionBuffer(object):
+class TransitionBuffer(BaseBuffer):
     def __init__(self, dtype: np.dtype = np.float32) -> None:
         self.observation: np.ndarray = None  # shape: [num_episode, num_vec, observation.shape]
         self.action: np.ndarray = None
