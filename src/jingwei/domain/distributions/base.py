@@ -8,30 +8,31 @@ DistributionType = TypeVar("DistributionType", bound="Distribution")
 
 
 class Distribution(ABC):
+    def __init__(self) -> None:
+        super().__init__()
+        self.distribution = None
+
     @abstractmethod
-    def proba_distrbution_net():
+    def prob_distribution(self, **kwargs) -> DistributionType:
         pass
 
     @abstractmethod
-    def prob_distribution(distribution: DistributionType) -> DistributionType:
+    def log_prob(self, action: ActionType) -> TensorType:
         pass
 
     @abstractmethod
-    def log_prob(observation: ObservationType) -> TensorType:
+    def entropy(self) -> TensorType:
         pass
 
     @abstractmethod
-    def entropy() -> TensorType:
+    def sample(self) -> ActionType:
         pass
 
     @abstractmethod
-    def sample() -> ActionType:
+    def mode(self) -> ActionType:
         pass
 
-    @abstractmethod
-    def mode() -> ActionType:
-        pass
-
-    @abstractmethod
-    def get_action() -> ActionType:
-        pass
+    def get_action(self, deterministic: bool = False) -> ActionType:
+        if deterministic:
+            return self.mode()
+        return self.sample()
