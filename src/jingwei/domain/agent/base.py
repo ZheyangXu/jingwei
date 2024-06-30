@@ -18,5 +18,5 @@ class BaseAgent(ABC):
         pass
 
     @abstractmethod
-    def compute_loss(self, transitions: TransitionBatch) -> TensorType:
+    def compute_actor_loss(self, transitions: TransitionBatch) -> TensorType:
         pass
