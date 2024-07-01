@@ -92,9 +92,6 @@ class TransitionBuffer(BaseBuffer):
             else:
                 self.__dict__[key] = np.concatenate((self.__dict__[key], getattr(other, key)))
 
-    def stack(self, others: List[TransitionBufferType]) -> int:
-        return self.size()
-
     def size(self) -> int:
         return self.__len__()
 
