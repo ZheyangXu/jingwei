@@ -36,7 +36,7 @@ build-backend = "pdm.backend"
 distribution = true
 
 [tool.black]
-line-length = 120
+line-length = 100
 target-version = ["py312"]
 
 [tool.isort]
