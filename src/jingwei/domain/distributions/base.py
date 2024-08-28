@@ -1,10 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar
+from typing import Self, TypeVar
 
 from jingwei.infra.typing import *
-
-
-DistributionType = TypeVar("DistributionType", bound="Distribution")
 
 
 class Distribution(ABC):
@@ -13,7 +10,7 @@ class Distribution(ABC):
         self.distribution = None
 
     @abstractmethod
-    def prob_distribution(self, **kwargs) -> DistributionType:
+    def prob_distribution(self, **kwargs) -> Self:
         pass
 
     @abstractmethod

@@ -6,28 +6,28 @@ import torch.nn as nn
 import torch.optim as optim
 
 
-ObservationType = Type[np.ndarray | torch.Tensor]
-ActionType = Type[np.ndarray | torch.Tensor]
-RewardType = Type[np.ndarray | torch.Tensor]
-DoneType = Type[np.ndarray | torch.Tensor]
-ValueType = Type[np.ndarray | torch.Tensor]
+ObservationType = np.ndarray | torch.Tensor
+ActionType = np.ndarray | torch.Tensor
+RewardType = np.ndarray | torch.Tensor
+DoneType = np.ndarray | torch.Tensor
+ValueType = np.ndarray | torch.Tensor
 
 
-ObservationNDArray = Type[np.ndarray]
-ActionNDArray = Type[np.ndarray]
-RewardNDArray = Type[np.ndarray]
-DoneNDArray = Type[np.ndarray]
-ValueNDArray = Type[np.ndarray]
+ObservationNDArray = np.ndarray
+ActionNDArray = np.ndarray
+RewardNDArray = np.ndarray
+DoneNDArray = np.ndarray
+ValueNDArray = np.ndarray
 
-ObservationTensor = Type[torch.Tensor]
-ActionTensor = Type[torch.Tensor]
-RewardTensor = Type[torch.Tensor]
-DoneTensor = Type[torch.Tensor]
-ValueTensor = Type[torch.Tensor]
+ObservationTensor = torch.Tensor
+ActionTensor = torch.Tensor
+RewardTensor = torch.Tensor
+DoneTensor = torch.Tensor
+ValueTensor = torch.Tensor
 
 
-LossType = Type[torch.Tensor]
-ModelType = Type[nn.Module]
-OptimizerType = Type[optim.Optimizer]
-TensorType = Type[torch.Tensor]
-DeviceType = Type[torch.device | str]
+LossType = torch.Tensor
+ModelType = nn.Module
+OptimizerType = optim.Optimizer
+TensorType = torch.Tensor
+DeviceType = torch.device | str
