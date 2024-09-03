@@ -49,7 +49,7 @@ class Trainner(object):
             #     for step in gradient_step:
             #         batch = self.replay_buffer.sample()
             #         self.agent.update_step()
-            if self.agent.mtype() == MType.off_policy:
+            if self.agent.mtype == MType.off_policy:
                 n_gradient_steps = self.n_gradient_steps
             else:
                 n_gradient_steps = int(self.buffer.len() / self.batch_size)

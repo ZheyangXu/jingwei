@@ -21,7 +21,7 @@ class Rollout(object):
         for i in range(max_step):
             wrapped_observation = self.data_wrapper.observation_to_tensor(observation)
             action = self.agent.get_action(wrapped_observation)
-            action = self.data_wrapper.action_to_numpy(action)
+            action = self.data_wrapper.unwrap_action(action)
             observation_next, reward, terminated, truncated, _ = self.env.step(action)
             buffer.push(
                 Transition(observation, action, reward, observation_next, terminated, truncated)

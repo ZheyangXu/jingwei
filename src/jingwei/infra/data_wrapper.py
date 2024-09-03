@@ -28,7 +28,7 @@ class BaseDataWrapper(ABC):
         pass
 
     @abstractmethod
-    def action_to_numpy(
+    def unwrap_action(
         self,
         action: TensorType,
         preprocess_fn: Callable = lambda x: x,
@@ -94,13 +94,16 @@ class DataWrapper(BaseDataWrapper):
             device = self.device
         return torch.as_tensor(data, dtype=dtype, device=device)
 
-    def action_to_numpy(
+    def unwrap_action(
         self,
         action: torch.Tensor,
         preprocess_fn: Callable[..., Any] = lambda x: x,
         post_process_fn: Callable[..., Any] = lambda x: x,
     ) -> np.ndarray | int:
-        return post_process_fn(self.to_numpy(preprocess_fn(action)))
+        action = post_process_fn(self.to_numpy(preprocess_fn(action)))
+        if isinstance(self.action_space, gym.spaces.Discrete):
+            action = action[0]
+        return action
 
     def observation_to_tensor(
         self,
