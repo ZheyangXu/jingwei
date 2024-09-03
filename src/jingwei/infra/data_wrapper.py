@@ -1,11 +1,16 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
+import gymnasium as gym
 import numpy as np
 import torch
 
 from jingwei.infra.typing import *
-from jingwei.transitions.base import TransitionBatch, TensorTransitionBatch, TransitionMembers
+from jingwei.transitions.base import (
+    TensorTransitionBatch,
+    TransitionBatch,
+    TransitionMembers,
+)
 
 
 class BaseDataWrapper(ABC):
@@ -14,18 +19,29 @@ class BaseDataWrapper(ABC):
         pass
 
     @abstractmethod
-    def to_tensor(self, data: np.ndarray, dtype: Any = None, device: str = None) -> TensorType:
+    def to_tensor(
+        self,
+        data: np.ndarray,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[torch.device | str] = "cpu",
+    ) -> TensorType:
         pass
 
     @abstractmethod
     def action_to_numpy(
-        self, action: TensorType, preprocess_fn: Callable = lambda x: x, post_process_fn: Callable = lambda x: x
+        self,
+        action: TensorType,
+        preprocess_fn: Callable = lambda x: x,
+        post_process_fn: Callable = lambda x: x,
     ) -> np.ndarray | int:
         pass
 
     @abstractmethod
     def observation_to_tensor(
-        self, observation: np.ndarray, preprocess_fn: Callable = lambda x: x, post_process_fn: Callable = lambda x: x
+        self,
+        observation: np.ndarray,
+        preprocess_fn: Callable = lambda x: x,
+        post_process_fn: Callable = lambda x: x,
     ) -> TensorType:
         pass
 
@@ -33,7 +49,7 @@ class BaseDataWrapper(ABC):
     def to_numpy_transition(
         self,
         transitions: TensorTransitionBatch,
-        dtype: Any = None,
+        dtype: Optional[np.dtype] = None,
         preprocess_fn: Callable = lambda x: x,
         post_process_fn: Callable = lambda x: x,
     ) -> TransitionBatch:
@@ -43,8 +59,7 @@ class BaseDataWrapper(ABC):
     def to_tensor_transition(
         self,
         transitions: TransitionBatch,
-        dtype: Any = None,
-        device: str = None,
+        dtype: Optional[torch.dtype] = None,
         preprocess_fn: Callable = lambda x: x,
         post_process_fn: Callable = lambda x: x,
     ) -> TensorTransitionBatch:
@@ -52,14 +67,27 @@ class BaseDataWrapper(ABC):
 
 
 class DataWrapper(BaseDataWrapper):
-    def __init__(self, dtype: torch.dtype, device: torch.device = "cpu") -> None:
+    def __init__(
+        self,
+        action_space: gym.Space,
+        observation_space: gym.Space,
+        dtype: torch.dtype,
+        device: torch.device = torch.device("cpu"),
+    ) -> None:
+        self.action_space = action_space
+        self.observation_space = observation_space
         self.dtype = dtype
         self.device = device
 
     def to_numpy(self, data: torch.Tensor) -> np.ndarray:
         return data.detach().cpu().numpy()
 
-    def to_tensor(self, data: np.ndarray, dtype: torch.dtype = None, device: torch.device = None) -> torch.Tensor:
+    def to_tensor(
+        self,
+        data: np.ndarray,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[torch.device] = None,
+    ) -> torch.Tensor:
         if dtype is None:
             dtype = self.dtype
         if device is None:
@@ -80,31 +108,41 @@ class DataWrapper(BaseDataWrapper):
         preprocess_fn: Callable[..., Any] = lambda x: x,
         post_process_fn: Callable[..., Any] = lambda x: x,
     ) -> torch.Tensor:
-        return post_process_fn(self.observation_to_tensor(preprocess_fn(observation)))
+        return post_process_fn(self.to_tensor(preprocess_fn(observation)))
 
     def to_numpy_transition(
         self,
         transitions: TensorTransitionBatch,
-        dtype: Any = None,
+        dtype: Optional[np.dtype] = None,
         preprocess_fn: Callable[..., Any] = lambda x: x,
         post_process_fn: Callable[..., Any] = lambda x: x,
     ) -> TransitionBatch:
         preprocessed_transitions = preprocess_fn(transitions)
-        batch = TransitionBatch()
-        for key in TransitionMembers.names:
-            setattr(batch, key, self.to_numpy(getattr(preprocessed_transitions, key)))
+        batch = TransitionBatch(
+            self.to_numpy(preprocessed_transitions.observation),
+            self.to_numpy(preprocessed_transitions.action),
+            self.to_numpy(preprocessed_transitions.reward),
+            self.to_numpy(preprocessed_transitions.observation_next),
+            self.to_numpy(preprocessed_transitions.terminated),
+            self.to_numpy(preprocessed_transitions.truncated),
+        )
         return post_process_fn(batch)
 
     def to_tensor_transition(
         self,
         transitions: TransitionBatch,
-        dtype: Any = None,
-        device: str = None,
-        preprocess_fn: Callable[..., Any] = lambda x: x,
-        post_process_fn: Callable[..., Any] = lambda x: x,
+        dtype: Optional[torch.dtype] = None,
+        preprocess_fn: Callable[..., TransitionBatch] = lambda x: x,
+        post_process_fn: Callable[..., TensorTransitionBatch] = lambda x: x,
     ) -> TensorTransitionBatch:
         preprocessed_transitons = preprocess_fn(transitions)
-        batch = TransitionBatch()
-        for key in TransitionMembers.names:
-            setattr(batch, key, self.to_tensor(getattr(preprocessed_transitons, key), dtype, device))
+        batch = TensorTransitionBatch(
+            self.to_tensor(preprocessed_transitons.observation, dtype, self.device),
+            self.to_tensor(preprocessed_transitons.action, dtype, self.device),
+            self.to_tensor(preprocessed_transitons.reward, dtype, self.device),
+            self.to_tensor(preprocessed_transitons.observation_next, dtype, self.device),
+            self.to_tensor(preprocessed_transitons.terminated, dtype, self.device),
+            self.to_tensor(preprocessed_transitons.truncated, dtype, self.device),
+        )
+
         return post_process_fn(batch)

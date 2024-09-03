@@ -15,11 +15,12 @@ class TransitionMembers(Enum):
     terminated = auto()
     truncated = auto()
     done = auto()
-
-    @property
+    
+    @staticmethod
     def names() -> List[str]:
         return TransitionMembers._member_names_
-
+    
+    @staticmethod
     def contains(key: str) -> bool:
         return key in TransitionMembers._member_names_
 
@@ -63,5 +64,5 @@ class TensorTransitionBatch(NamedTuple):
         return torch.logical_or(self.terminated, self.truncated)
 
     def to(self, device: torch.device) -> None:
-        for key in TransitionMembers.names:
+        for key in TransitionMembers.names():
             getattr(self, key).to(device)

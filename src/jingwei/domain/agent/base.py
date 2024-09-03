@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 
+from jingwei.infra.mtype import MType
 from jingwei.infra.typing import *
-from jingwei.transitions.base import TransitionBatch
+from jingwei.transitions.base import TensorTransitionBatch
 
 
 class BaseAgent(ABC):
@@ -10,13 +11,17 @@ class BaseAgent(ABC):
         pass
 
     @abstractmethod
-    def estimate_return(self, transitions: TransitionBatch) -> ValueType:
+    def estimate_return(self, transitions: TensorTransitionBatch) -> ValueType:
         pass
 
     @abstractmethod
-    def update_step(self, transitions: TransitionBatch) -> None:
+    def update_step(self, transitions: TensorTransitionBatch) -> None:
         pass
 
     @abstractmethod
-    def compute_actor_loss(self, transitions: TransitionBatch) -> TensorType:
+    def compute_actor_loss(self, transitions: TensorTransitionBatch) -> TensorType:
+        pass
+
+    @abstractmethod
+    def mtype(self) -> MType:
         pass

@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 
-from jingwei.domain.distributions.base import Distribution
 from jingwei.infra.typing import *
-from jingwei.transitions.base import TransitionBatch
 
 
 class BaseActor(ABC):
@@ -15,13 +13,13 @@ class BaseActor(ABC):
         pass
 
     @abstractmethod
-    def get_probs(self, observation: ObservationTensor) -> TensorType:
-        pass
-
-    @abstractmethod
     def get_log_probs(self, observation: ObservationTensor) -> TensorType:
         pass
 
     @abstractmethod
-    def to(self, device: DeviceType = None) -> DeviceType:
+    def update_step(self, loss: TensorType) -> None:
+        pass
+
+    @abstractmethod
+    def to(self, device: DeviceType = "") -> DeviceType:
         pass

@@ -1,22 +1,15 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import List, TypeVar
+from typing import List, Self, TypeVar
 
 import numpy as np
 
 from jingwei.transitions.base import Transition, TransitionBatch, TransitionMembers
 
 
-TransitionBufferType = TypeVar("TransitionBufferType", bound="TransitionBuffer")
-
-
 class BaseBuffer(ABC):
     @abstractmethod
     def sample(self, batch_size: int) -> TransitionBatch:
-        pass
-
-    @abstractmethod
-    def get(self, key: str) -> TransitionBatch:
         pass
 
     @property
@@ -28,16 +21,28 @@ class BaseBuffer(ABC):
     def push(self, transition: Transition) -> int:
         pass
 
+    @abstractmethod
+    def capacity(self) -> int:
+        pass
+
+    @abstractmethod
+    def len(self) -> int:
+        pass
+
+    @abstractmethod
+    def clear(self) -> int:
+        pass
+
 
 class TransitionBuffer(BaseBuffer):
-    def __init__(self, dtype: np.dtype = np.float32) -> None:
-        self.observation: np.ndarray = None  # shape: [num_episode, num_vec, observation.shape]
-        self.action: np.ndarray = None
-        self.reward: np.ndarray = None
-        self.observation_next: np.ndarray = None
-        self.terminated: np.ndarray = None
-        self.truncated: np.ndarray = None
-        self.done: np.ndarray = None
+    def __init__(self, dtype: np.dtype = np.float32) -> None:  # type: ignore
+        self.observation: np.ndarray = np.array([]) # shape: [num_episode, num_vec, observation.shape]
+        self.action: np.ndarray = np.array([])
+        self.reward: np.ndarray = np.array([])
+        self.observation_next: np.ndarray = np.array([]) 
+        self.terminated: np.ndarray = np.array([])
+        self.truncated: np.ndarray = np.array([]) 
+        self.done: np.ndarray = np.array([]) 
         self.dtype = dtype
 
     def __len__(self) -> int:
@@ -48,7 +53,7 @@ class TransitionBuffer(BaseBuffer):
     def __getitem__(self, index: int | str) -> Transition:
         if isinstance(index, str):
             if not TransitionMembers.contains(index):
-                raise KeyError(f"{index} is not in keys {TransitionMembers.names}")
+                raise KeyError(f"{index} is not in keys {TransitionMembers.names()}")
             return self.__dict__[index]
         if not isinstance(index, int):
             raise TypeError(f"index shoud be str or int")
@@ -63,14 +68,14 @@ class TransitionBuffer(BaseBuffer):
             self.truncated[index],
         )
 
-    def __iadd__(self, other: TransitionBufferType | Transition) -> TransitionBufferType:
+    def __iadd__(self, other: Self | Transition) -> Self:
         if isinstance(other, Transition):
             self._iadd_transition(other)
         elif isinstance(other, type(self)):
             self._iadd(other)
         return self
 
-    def __add__(self, other: TransitionBufferType | Transition) -> TransitionBufferType:
+    def __add__(self, other: Self | Transition) -> Self:
         return deepcopy(self).__iadd__(other)
 
     def _iadd_transition(self, transition: Transition) -> None:
@@ -82,7 +87,7 @@ class TransitionBuffer(BaseBuffer):
             else:
                 self.__dict__[key] = np.append(self.__dict__[key], getattr(transition, key))
 
-    def _iadd(self, other: TransitionBufferType) -> None:
+    def _iadd(self, other: Self) -> None:
         for key, value in self.__dict__.items():
             if not TransitionMembers.contains(key):
                 continue
@@ -95,17 +100,12 @@ class TransitionBuffer(BaseBuffer):
     def size(self) -> int:
         return self.__len__()
 
-    def push(self, transition: Transition | TransitionBufferType) -> int:
+    def push(self, transition: Transition | Self) -> int:
         self.__iadd__(transition)
         return self.size()
 
     def as_type(self, dtype: np.dtype) -> None:
         self.dtype = dtype
-
-    def get(self, key: str, default_value: np.ndarray = None) -> np.ndarray:
-        if not TransitionMembers.contains(key):
-            return default_value
-        return getattr(self, key)
 
     @property
     def data(self) -> TransitionBatch:

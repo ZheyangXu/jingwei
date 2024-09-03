@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, TypeVar
+from typing import Optional, Self, Tuple
 
 import torch
 import torch.nn as nn
@@ -6,11 +6,6 @@ from torch.distributions import Normal
 
 from jingwei.domain.distributions.base import Distribution
 from jingwei.infra.typing import *
-
-DiagGaussianDistributionType = TypeVar("DiagGaussianDistributionType", bound="DiagGaussianDistribution")
-SquashedDiagGaussianDistributionType = TypeVar(
-    "SquashedDiagGaussianDistributionType", bound="SquashedDiagGaussianDistribution"
-)
 
 
 def sum_independent_dims(tensor: torch.Tensor) -> torch.Tensor:
@@ -32,7 +27,7 @@ class DiagGaussianDistribution(Distribution):
     def __init__(self) -> None:
         super().__init__()
 
-    def prob_distribution(self, mean_actions: torch.Tensor, log_std: torch.Tensor) -> DiagGaussianDistributionType:
+    def prob_distribution(self, mean_actions: torch.Tensor, log_std: torch.Tensor) -> Self:
         action_std = torch.ones_like(mean_actions) * log_std.exp()
         self.distribution = Normal(mean_actions, action_std)
         return self
@@ -62,11 +57,13 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         self.epsilon = epsilon
         self.gaussian_action: Optional[torch.Tensor] = None
 
-    def prob_distribution(self, mean_actions: torch.Tensor, log_std: torch.Tensor) -> DiagGaussianDistributionType:
+    def prob_distribution(self, mean_actions: torch.Tensor, log_std: torch.Tensor) -> Self:
         super().prob_distribution(mean_actions, log_std)
         return self
 
-    def log_prob(self, action: torch.Tensor, gaussian_action: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def log_prob(
+        self, action: torch.Tensor, gaussian_action: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
         if gaussian_action is None:
             gaussian_action = TanhBijector.inverse(action)
 
@@ -74,7 +71,7 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         log_prob -= torch.sum(torch.log(1 - action**2 + self.epsilon), dim=1)
         return log_prob
 
-    def entropy(self) -> torch.Tensor:
+    def entropy(self) -> torch.Tensor | None:
         return None
 
     def sample(self) -> torch.Tensor:
