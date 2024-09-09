@@ -24,18 +24,19 @@ class Actor(BaseActor):
     def get_action(
         self, observation: torch.Tensor, deterministic: bool = False
     ) -> torch.Tensor:
+        observation = observation.reshape((1, 4))
         logits = self.model(observation)
         self.distribution.prob_distribution(logits)
         return self.distribution.get_action(deterministic)
-    
+
     def get_probs(self, observation: torch.Tensor) -> torch.Tensor:
         return self.model(observation)
-    
+
     def get_log_probs(self, observation: torch.Tensor) -> torch.Tensor:
         logits = self.model(observation)
         self.distribution.prob_distribution(logits)
         return self.distribution.log_prob(logits.reshape((-1, )))
-    
+
     def update_step(self, loss: torch.Tensor) -> None:
         self.optimizer.zero_grad()
         loss.backward()
