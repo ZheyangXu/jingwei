@@ -5,6 +5,7 @@ import torch.optim as optim
 from jingwei.domain.actor.base import BaseActor
 from jingwei.domain.distributions.base import Distribution
 from jingwei.infra.typing import *
+from traitlets import observe
 
 
 class Actor(BaseActor):
@@ -24,7 +25,6 @@ class Actor(BaseActor):
     def get_action(
         self, observation: torch.Tensor, deterministic: bool = False
     ) -> torch.Tensor:
-        observation = observation.reshape((1, 4))
         logits = self.model(observation)
         self.distribution.prob_distribution(logits)
         return self.distribution.get_action(deterministic)
@@ -35,7 +35,7 @@ class Actor(BaseActor):
     def get_log_probs(self, observation: torch.Tensor) -> torch.Tensor:
         logits = self.model(observation)
         self.distribution.prob_distribution(logits)
-        return self.distribution.log_prob(logits.reshape((-1, )))
+        return self.distribution.log_prob(logits)
 
     def update_step(self, loss: torch.Tensor) -> None:
         self.optimizer.zero_grad()

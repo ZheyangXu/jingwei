@@ -101,7 +101,7 @@ class DataWrapper(BaseDataWrapper):
         post_process_fn: Callable[..., Any] = lambda x: x,
     ) -> np.ndarray | int:
         action = post_process_fn(self.to_numpy(preprocess_fn(action)))
-        if isinstance(self.action_space, gym.spaces.Discrete):
+        if isinstance(self.action_space, gym.spaces.Discrete) and action.ndim > 0:
             action = action[0]
         return action
 

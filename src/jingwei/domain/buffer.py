@@ -40,7 +40,7 @@ class Buffer(BaseBuffer):
             if isinstance(action_shape, (int | np.int64))
             else (capacity, *action_shape)
         )
-        self.shape: Tuple[int, ...] = (capacity,)
+        self.shape: Tuple[int, ...] = (capacity, 1)
         self.dtype = dtype
         self._pos = 0
 
