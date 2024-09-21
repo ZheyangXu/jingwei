@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from jingwei.domain.distribution import BaseActor
+from jingwei.domain.actor import BaseActor
 from jingwei.domain.distribution import Distribution
 from jingwei.infra.typing import *
 from traitlets import observe
