@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from torch.distributions import Normal
 
-from jingwei.domain.distributions.base import Distribution
+from jingwei.domain.distribution import Distribution
 from jingwei.infra.typing import *
 
 

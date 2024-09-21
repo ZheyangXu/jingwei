@@ -4,8 +4,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from jingwei.domain.actor.base import BaseActor
-from jingwei.domain.agent.base import BaseAgent
+from jingwei.domain.distribution import BaseActor
+from jingwei.domain.critic import BaseAgent
 from jingwei.infra.mtype import MType
 from jingwei.infra.typing import *
 from jingwei.transitions.base import TensorTransitionBatch

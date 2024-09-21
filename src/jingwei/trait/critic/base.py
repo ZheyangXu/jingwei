@@ -1,4 +1,4 @@
-from jingwei.domain.critic.base import BaseCritic
+from jingwei.domain.critic import BaseCritic
 from jingwei.infra.typing import *
 from jingwei.transitions.base import TensorTransitionBatch, TransitionBatch
 

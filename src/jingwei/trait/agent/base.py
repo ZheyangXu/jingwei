@@ -1,7 +1,7 @@
 from copy import deepcopy
 from typing import Any, Callable
 
-from jingwei.domain.agent.base import BaseAgent
+from jingwei.domain.critic import BaseAgent
 from jingwei.domain.buffer import BaseBuffer
 from jingwei.infra.typing import *
 from jingwei.trait.actor.base import ActorTrait
