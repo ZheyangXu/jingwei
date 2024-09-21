@@ -1,7 +1,7 @@
 import gymnasium as gym
 
 from jingwei.domain.agent.base import BaseAgent
-from jingwei.infra.buffer.base import BaseBuffer, TransitionBuffer
+from jingwei.domain.buffer import BaseBuffer 
 from jingwei.infra.data_wrapper import DataWrapper
 from jingwei.infra.typing import *
 from jingwei.transitions.base import Transition

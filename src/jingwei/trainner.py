@@ -1,7 +1,7 @@
 import gymnasium as gym
 
 from jingwei.domain.agent.base import BaseAgent
-from jingwei.infra.buffer.base import BaseBuffer
+from jingwei.domain.buffer import BaseBuffer
 from jingwei.infra.data_wrapper import DataWrapper
 from jingwei.infra.mtype import MType
 from jingwei.infra.typing import *
@@ -55,7 +55,7 @@ class Trainner(object):
                 n_gradient_steps = int(self.buffer.len() / self.batch_size)
 
             for i in range(n_gradient_steps):
-                batch = self.buffer.sample(self.batch_size)
+                batch = self.buffer.get(self.batch_size)
                 wrapped_batch = self.data_wrapper.to_tensor_transition(batch)
                 self.agent.update_step(wrapped_batch)
 
