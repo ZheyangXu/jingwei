@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from jingwei.domain.critic.base import BaseCritic
+from jingwei.domain.critic import BaseCritic
 from jingwei.infra.typing import *
 from jingwei.infra.typing import LossType
 from jingwei.transitions.base import TransitionBatch
