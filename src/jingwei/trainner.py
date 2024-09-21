@@ -1,6 +1,6 @@
 import gymnasium as gym
 
-from jingwei.domain.critic import BaseAgent
+from jingwei.domain.agent import BaseAgent
 from jingwei.domain.buffer import BaseBuffer
 from jingwei.infra.data_wrapper import DataWrapper
 from jingwei.infra.mtype import MType

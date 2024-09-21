@@ -1,8 +1,8 @@
 import torch
 import torch.nn.functional as F
 
-from jingwei.domain.distribution import BaseActor
-from jingwei.domain.critic import BaseAgent
+from jingwei.domain.actor import BaseActor
+from jingwei.domain.agent import BaseAgent
 from jingwei.domain.critic import BaseCritic
 from jingwei.infra.mtype import MType
 from jingwei.infra.typing import TensorType
