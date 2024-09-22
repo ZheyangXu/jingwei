@@ -1,3 +1,4 @@
+from jingwei.infra.typing import ActionTensor, ObservationTensor, TensorType
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -28,6 +29,9 @@ class Actor(BaseActor):
         logits = self.model(observation)
         self.distribution.prob_distribution(logits)
         return self.distribution.get_action(deterministic)
+    
+    def get_values(self, observation: torch.Tensor, action: torch.Tensor | None = None) -> torch.Tensor:
+        return self.model(observation)
 
     def get_probs(self, observation: torch.Tensor) -> torch.Tensor:
         return self.model(observation)

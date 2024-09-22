@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from jingwei.infra.typing import *
 
@@ -14,6 +15,10 @@ class BaseActor(ABC):
 
     @abstractmethod
     def get_log_probs(self, observation: ObservationTensor) -> TensorType:
+        pass
+
+    @abstractmethod
+    def get_values(self, observation: ObservationTensor, action: Optional[ActionTensor]) -> TensorType:
         pass
 
     @abstractmethod

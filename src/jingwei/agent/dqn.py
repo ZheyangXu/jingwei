@@ -21,10 +21,10 @@ class DQNAgent(BaseAgent):
 
     def get_action(self, observation: torch.Tensor) -> torch.Tensor:
         return self.actor.get_action(observation)
-    
+
     # TODO: add critic for dqn?
     def estimate_return(self, transitions: TensorTransitionBatch) -> torch.Tensor:
-        return super().estimate_return(transitions=transitions)
+        return self.actor.get_values(transitions.observation)
 
     def update_step(self, transitions: TensorTransitionBatch, step: int = 1) -> None:
         loss = self.compute_actor_loss(transitions)
@@ -33,11 +33,13 @@ class DQNAgent(BaseAgent):
             self.target_actor = deepcopy(self.actor)
 
     def compute_actor_loss(self, transitions: TensorTransitionBatch) -> torch.Tensor:
-        q_values = self.actor.get_probs(transitions.observation).max(dim=1)[0]
-        max_next_q_values = self.target_actor.get_probs(transitions.observation_next).max(dim=1)[0]
-        q_targets = transitions.reward + self.gamma * max_next_q_values * (
-            1 - transitions.terminated
+        q_values = self.actor.get_values(transitions.observation).max(dim=1).values.reshape((-1, 1))
+        next_q_values = (
+            self.target_actor.get_values(transitions.observation_next)
+            .max(dim=1)
+            .values.reshape((-1, 1))
         )
+        q_targets = transitions.reward + self.gamma * next_q_values * (1 - transitions.terminated)
         return torch.mean(F.mse_loss(q_values, q_targets))
 
     def mtype(self) -> MType:
