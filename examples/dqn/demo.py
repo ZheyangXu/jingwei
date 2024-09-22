@@ -7,8 +7,8 @@ import torch.optim as optim
 
 from jingwei.actor.base import Actor
 from jingwei.agent.dqn import DQNAgent
+from jingwei.buffer.replay_buffer import ReplayBuffer
 from jingwei.distributions.categorical import CategorialDistribution
-from jingwei.infra.buffer.replay_buffer import ReplayBuffer
 from jingwei.infra.data_wrapper import DataWrapper
 from jingwei.rollout.base import Rollout
 from jingwei.trainner import Trainner
@@ -44,14 +44,13 @@ def main():
     observation_dim = env.observation_space.shape[0]
     hidden_dim = 10
     action_dim = env.action_space.n
-    print(f"action_dim: {action_dim}")
     model = QNet(observation_dim, hidden_dim, action_dim)
     optimizer = optim.Adam(model.parameters())
     device = torch.device("cpu")
     distribution = CategorialDistribution()
     actor = Actor(model, optimizer, distribution, device)
     agent = DQNAgent(actor)
-    replay_buffer = ReplayBuffer(100000)
+    replay_buffer = ReplayBuffer(100000, env.observation_space.shape, action_dim)
     wrapper = DataWrapper(env.action_space, env.observation_space, torch.float32)
     rollout = Rollout(agent, env, wrapper)
     trainner = Trainner(agent, env, rollout, replay_buffer, wrapper, batch_size=2)

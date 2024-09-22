@@ -1,5 +1,4 @@
 import gymnasium as gym
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -7,10 +6,10 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from jingwei.actor.base import Actor
-from jingwei.agent.ppo import PPOAgent
+from jingwei.agent.a2c import ActorCriticAgent
 from jingwei.critic.base import Critic
 from jingwei.distributions.categorical import CategorialDistribution
-from jingwei.buffer.rollout_buffer import RolloutBuffer
+from jingwei.buffer.replay_buffer import ReplayBuffer
 from jingwei.infra.data_wrapper import DataWrapper
 from jingwei.rollout.base import Rollout
 from jingwei.trainner import Trainner
@@ -52,8 +51,8 @@ def main():
     critic_model = ValueNet(observation_dim, hidden_dim)
     critic_optimizer = optim.Adam(critic_model.parameters())
     critic = Critic(critic_model, critic_optimizer)
-    agent = PPOAgent(actor, critic)
-    replay_buffer = RolloutBuffer(10000, env.observation_space.shape, env.action_space.n)
+    agent = ActorCriticAgent(actor, critic)
+    replay_buffer = ReplayBuffer(10000, env.observation_space.shape, env.action_space.n)
     wrapper = DataWrapper(env.action_space, env.observation_space, torch.float32)
     rollout = Rollout(agent, env, wrapper)
     trainner = Trainner(agent, env, rollout, replay_buffer, wrapper)

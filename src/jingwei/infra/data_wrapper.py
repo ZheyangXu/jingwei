@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Tuple
 
 import gymnasium as gym
 import numpy as np
@@ -72,12 +72,14 @@ class DataWrapper(BaseDataWrapper):
         action_space: gym.Space,
         observation_space: gym.Space,
         dtype: torch.dtype,
+        num_envs: int = 1,
         device: torch.device = torch.device("cpu"),
     ) -> None:
         self.action_space = action_space
         self.observation_space = observation_space
         self.dtype = dtype
         self.device = device
+        self.num_envs = num_envs
 
     def to_numpy(self, data: torch.Tensor) -> np.ndarray:
         return data.detach().cpu().numpy()
@@ -111,6 +113,8 @@ class DataWrapper(BaseDataWrapper):
         preprocess_fn: Callable[..., Any] = lambda x: x,
         post_process_fn: Callable[..., Any] = lambda x: x,
     ) -> torch.Tensor:
+        if observation.ndim == len(self.observation_space.shape):
+            observation = np.expand_dims(observation, 0)
         return post_process_fn(self.to_tensor(preprocess_fn(observation)))
 
     def to_numpy_transition(
