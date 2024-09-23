@@ -18,6 +18,12 @@ class DQNAgent(BaseAgent):
         self.target_actor = deepcopy(actor)
         self.target_update_step = target_update_step
         self.gamma = gamma
+        self.step: int = 0
+
+    def update_target_actor(self) -> None:
+        self.step += 1
+        if self.step % self.target_update_step == 0:
+            self.target_actor.model.load_state_dict(self.actor.model.state_dict())
 
     def get_action(self, observation: torch.Tensor) -> torch.Tensor:
         return self.actor.get_action(observation)
@@ -26,11 +32,10 @@ class DQNAgent(BaseAgent):
     def estimate_return(self, transitions: TensorTransitionBatch) -> torch.Tensor:
         return self.actor.get_values(transitions.observation)
 
-    def update_step(self, transitions: TensorTransitionBatch, step: int = 1) -> None:
+    def update_step(self, transitions: TensorTransitionBatch) -> None:
         loss = self.compute_actor_loss(transitions)
         self.actor.update_step(loss)
-        if step % self.target_update_step == 0:
-            self.target_actor = deepcopy(self.actor)
+        self.update_target_actor()
 
     def compute_actor_loss(self, transitions: TensorTransitionBatch) -> torch.Tensor:
         q_values = self.actor.get_values(transitions.observation).max(dim=1).values.reshape((-1, 1))
