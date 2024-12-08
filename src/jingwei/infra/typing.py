@@ -1,0 +1,26 @@
+from typing import Any, Protocol, Self, TypeVar
+
+ShapeType = TypeVar("ShapeType", bound=tuple[int, ...])
+DeviceType = TypeVar("DeviceType", bound=str | Any)
+Dtype = TypeVar("Dtype", bound=Any)
+
+
+class TensorLike(Protocol):
+
+    def __len__(self) -> int: ...
+
+    def __add__(self, other: Any) -> Self: ...
+
+    def __iadd__(self, other: Any) -> Self: ...
+
+    def __mul__(self, other: Any) -> Self: ...
+
+    def __imul__(self, other: Any) -> Self: ...
+
+    @property
+    def shape(self) -> ShapeType: ...
+
+    @property
+    def dtype(self) -> Dtype: ...
+
+    def reshape(self, shap: ShapeType) -> Self: ...
