@@ -1,0 +1,28 @@
+default_install_hook_types: [commit-msg, pre-commit]
+default_stages: [commit, manual]
+fail_fast: false
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-added-large-files
+  - repo: local
+    hooks:
+      - id: format
+        name: format
+        entry: pdm run format
+        require_serial: true
+        language: system
+        types: [python]
+      - id: lint
+        name: lint
+        entry: pdm run lint
+        require_serial: true
+        language: system
+        types: [python]
+      - id: pdm-lock-check
+        name: pdm lock check
+        entry: pdm lock
+        args: [--check]
+        language: system
+        pass_filenames: false
