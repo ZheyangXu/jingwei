@@ -15,16 +15,17 @@ readme          = "README.md"
 license         = { text = "MIT" }
 
 [project.optional-dependencies]
-paddle = [
-    "paddlepaddle>=2.6.2",
-]
+paddle = ["paddlepaddle>=2.6.2"]
 
 [build-system]
 requires      = ["pdm-backend"]
 build-backend = "pdm.backend"
 
 [dependency-groups]
-test = ["pytest>=8.3.4"]
+test = [
+    "pytest>=8.3.4",
+    "coverage>=7.6.9",
+]
 lint = [
     "black>=24.10.0",
     "isort>=5.13.2",
@@ -49,91 +50,27 @@ indent                 = 4
 lines_after_imports    = 2
 multi_line_output      = 3
 
-[tool.ruff.lint]
-select = [
-    "ASYNC",
-    "B",
-    "C4",
-    "C90",
-    "COM",
-    "D",
-    "DTZ",
-    "E",
-    "F",
-    "FLY",
-    "G",
-    "I",
-    "ISC",
-    "PIE",
-    "PLC",
-    "PLE",
-    "PLW",
-    "RET",
-    "RUF",
-    "RSE",
-    "SIM",
-    "TID",
-    "UP",
-    "W",
-    "YTT",
-]
-ignore = [
-    "SIM118", # Needed b/c iter(batch) != iter(batch.keys()). See https://github.com/thu-ml/tianshou/issues/922
-    "E501",   # line too long. black does a good enough job
-    "E741",   # variable names like "l". this isn't a huge problem
-    "B008",   # do not perform function calls in argument defaults. we do this sometimes
-    "B011",   # assert false. we don't use python -O
-    "B028",   # we don't need explicit stacklevel for warnings
-    "D100",
-    "D101",
-    "D102",
-    "D104",
-    "D105",
-    "D107",
-    "D203",
-    "D213",
-    "D401",
-    "D402",   # docstring stuff
-    "DTZ005", # we don't need that
-    # remaining rules from https://github.com/psf/black/blob/main/.flake8 (except W503)
-    # this is a simplified version of config, making vscode plugin happy
-    "E402",
-    "E501",
-    "E701",
-    "E731",
-    "C408",
-    "E203",
-    # Logging statement uses f-string warning
-    "G004",
-    # Unnecessary `elif` after `return` statement
-    "RET505",
-    "D106",    # undocumented public nested class
-    "D205",    # blank line after summary (prevents summary-only docstrings, which makes no sense)
-    "D212",    # no blank line after """. This clashes with sphinx for multiline descriptions of :param: that start directly after """
-    "PLW2901", # overwrite vars in loop
-    "B027",    # empty and non-abstract method in abstract class
-    "D404",    # It's fine to start with "This" in docstrings
-    "D407",
-    "D408",
-    "D409",    # Ruff rules for underlines under 'Example:' and so clash with Sphinx  
-]
-unfixable = [
-    "F841", # unused variable. ruff keeps the call, but mostly we want to get rid of it all
-    "F601", # automatic fix might obscure issue
-    "F602", # automatic fix might obscure issue
-    "B018", # automatic fix might obscure issue
-]
-extend-fixable = [
-    "F401", # unused import
-    "B905", # bugbear
-]
+[tool.ruff]
+lint.select = ["C", "E", "F", "I", "W"]
+lint.ignore = ["C901", "E501", "E741", "F402", "F823"]
+lint.isort  = { lines-after-imports = 2 }
+
+[tool.ruff.format]
+quote-style               = "double"
+indent-style              = "space"
+skip-magic-trailing-comma = false
+line-ending               = "auto"
+
 
 [tool.pdm]
 distribution = true
 
-[tool.pdm.scripts]
-lint   = "ruff check"
-test   = "pytest"
-format = "black src/jingwei"
-all    = { composite = ["format", "lint", "test"] }
+[tool.pytest.ini_options]
+pythonpath = ["src"]
 
+[tool.pdm.scripts]
+lint     = "ruff check"
+test     = "pytest"
+format   = "black src/jingwei"
+coverage = "coverage run --source=src -m pytest -v tests"
+all      = { composite = ["format", "lint", "test"] }

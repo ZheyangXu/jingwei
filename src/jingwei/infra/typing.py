@@ -1,11 +1,15 @@
-from typing import Any, Protocol, Self, TypeVar
+from typing import Any, Generic, Protocol, Self, TypeVar, runtime_checkable
+
+from numpy.typing import NDArray
+
 
 ShapeType = TypeVar("ShapeType", bound=tuple[int, ...])
 DeviceType = TypeVar("DeviceType", bound=str | Any)
 Dtype = TypeVar("Dtype", bound=Any)
 
 
-class TensorLike(Protocol):
+@runtime_checkable
+class TensorLike(Protocol, Generic[ShapeType, Dtype]):
 
     def __len__(self) -> int: ...
 
@@ -24,3 +28,9 @@ class TensorLike(Protocol):
     def dtype(self) -> Dtype: ...
 
     def reshape(self, shap: ShapeType) -> Self: ...
+
+
+type ObservationType = NDArray
+type ActionType = NDArray | int
+type RewardType = float
+type DoneType = bool
