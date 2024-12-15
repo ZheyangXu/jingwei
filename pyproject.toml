@@ -18,8 +18,8 @@ license         = { text = "MIT" }
 paddle = ["paddlepaddle>=2.6.2"]
 
 [build-system]
-requires      = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires      = ["hatchling"]
+build-backend = "hatchling.build"
 
 [dependency-groups]
 test = [
