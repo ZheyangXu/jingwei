@@ -1,5 +1,4 @@
-from jingwei.data.batch import Batch, LogProbBatch
-from jingwei.data.transition import Transition
+from jingwei.data import batch, transition
 
 
-__all__ = ["Batch", "Transition", "LogProbBatch"]
+__all__ = ["batch", "transition"]

@@ -1,4 +1,4 @@
-from jingwei.infra.wrapper.base import WrapperBase
+from jingwei.infra.wrapper.base import DataWrapperBase
 
 
-__all__ = ["WrapperBase"]
+__all__ = ["DataWrapperBase"]
