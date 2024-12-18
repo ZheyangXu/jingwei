@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from jingwei.data import Batch
+from jingwei.data.batch import Batch
 from jingwei.infra.typing import TensorLike
 
 

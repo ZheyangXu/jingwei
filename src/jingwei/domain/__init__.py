@@ -1,5 +1,4 @@
-from jingwei.domain.actor import ActorBase, PolicyActorBase, QActorBase
-from jingwei.domain.agent import AgentBase
+from jingwei.domain import actor, agent
 
 
-__all__ = ["AgentBase", "ActorBase", "QActorBase", "PolicyActorBase"]
+__all__ = ["actor", "agent"]
