@@ -130,13 +130,34 @@ class DQN
 
 ## 算法
 
-1. [DQN](https://github.com/ZheyangXu/playground/blob/main/src/playground/dqn.py)
-2. [REINFORCE](https://github.com/ZheyangXu/playground/blob/main/src/playground/reinforce.py)
-3. [A2C](https://github.com/ZheyangXu/playground/blob/main/src/playground/a2c.py)
-4. [TRPO](https://github.com/ZheyangXu/playground/blob/main/src/playground/trpo.py)
-5. [PPO](https://github.com/ZheyangXu/playground/blob/main/src/playground/ppo.py)
-6. [SAC](https://github.com/ZheyangXu/playground/blob/main/src/playground/sac.py)
-7. coming soon ...
+1. Model free RL:
+   1. DQN
+   2. Double DQN
+   3. A2C
+   4. TRPO
+   5. PPO
+   6. Rainbow
+   7. SAC
+   8. TD3
+2. Model based RL:
+   1. MBPO
+   2. DDPPO
+3. Multi-Agent RL:
+   1. MAPPO
+   2. HAPPO
+   3. QMIX
+   4. ACE
+4. Offline RL:
+   1. BCQ
+   2. CQL
+5. Imitation Learning:
+   1. GAIL
+   2. BC
+6. Exploration:
+   1. HER
+   2. RND
+   3. ICM
+   4. NGU
 
 ## 强化学习组成
 
@@ -144,22 +165,11 @@ class DQN
 2. policy evaluation
 3. policy iteration
 
-|算法|General Samples|Fit a model to estimate return|Improve the Policy|
+|Algo|General Samples|Fit a model to estimate return|Improve the Policy|
 |---|---|---|---|
 |Policy Gradient|run the policy|$\hat{Q}^\pi(x_t, u_t) = \sum\limits_{t^\prime=t}^Tr(x_{t^\prime}, u_{t^\prime})$|$\theta \leftarrow \theta + \alpha\nabla_\theta j(\theta)$|
 |Actor-Critic|run the policy|fit $\hat{V}_\phi^\pi$|$\theta \leftarrow \theta + \alpha\nabla_\theta j(\theta)$|
 |Q-Learning|run the policy|$Q_\phi(s, a) \leftarrow r(s, a)+ \gamma\max_{a^\prime}Q_\phi(s^\prime, a^\prime)$|$a = argmax_a Q_\phi(s, a)$|
-
-|Component|Policy Gradient|Actor-Critic|DQN|
-|---|---|---|---|
-|General Sample|
-|estimate return|
-|improve policy|
-|advantage|
-|on-policy|
-|off-policy|
-|target network|
-|replay buffer|
 
 ## LICENSE
 
