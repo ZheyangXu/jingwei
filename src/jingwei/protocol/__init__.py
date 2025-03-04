@@ -1,4 +1,4 @@
-from jingwei.protocol import actor, agent
+from jingwei.protocol import actor, agent, data
 
 
-__all__ = ["actor", "agent"]
+__all__ = ["actor", "agent", "data"]
