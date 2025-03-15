@@ -1,0 +1,13 @@
+from typing import Protocol
+
+
+class Trainer(Protocol): ...
+
+
+class OnPolicyTrainer(Protocol): ...
+
+
+class OffPolicyTrainer(Protocol): ...
+
+
+class OfflineTrainer(Protocol): ...
