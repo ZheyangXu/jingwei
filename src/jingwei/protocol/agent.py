@@ -4,7 +4,7 @@ from jingwei.data.batch import Batch
 from jingwei.infra.typing import TensorLike
 
 
-class AgentBase(Protocol):
+class Agent(Protocol):
 
     def get_action(self, observation: TensorLike) -> TensorLike: ...
 
