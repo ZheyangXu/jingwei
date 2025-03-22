@@ -1,5 +1,5 @@
-from jingwei.protocol.data.batch import Batch, LogProBatch
-from jingwei.protocol.data.transition import Transition
+from jingwei.protocol.data.batch import BatchProtocol, LogProBatchProtocol
+from jingwei.protocol.data.transition import TransitionProtocol
 
 
-__all__ = ["Batch", "LogProBatch", "Transition"]
+__all__ = ["BatchProtocol", "LogProBatchProtocol", "TransitionProtocol"]

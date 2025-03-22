@@ -7,6 +7,7 @@ from jingwei.infra.typing import ActionType, DoneType, ObservationType
 class Transition(object):
     observation: ObservationType
     action: ActionType
+    reward: float
     observation_next: ObservationType
     terminated: DoneType
     truncated: DoneType

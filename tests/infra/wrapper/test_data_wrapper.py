@@ -3,6 +3,13 @@ import numpy as np
 import torch
 
 from jingwei.infra.wrapper.data_wrapper import DataWrapper
+from jingwei.protocol.wrapper import DataWrapperProtocol
+
+
+def test_data_wrapper_is_data_wrapper():
+    env = gym.make("CartPole-v1")
+    data_wrapper = DataWrapper(env)
+    assert isinstance(data_wrapper, DataWrapperProtocol)
 
 
 def test_discrete_action_space():

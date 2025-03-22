@@ -1,10 +1,11 @@
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
-from jingwei.data.batch import Batch
 from jingwei.infra.typing import TensorLike
+from jingwei.protocol.data import BatchProtocol
 
 
+@runtime_checkable
 class Critic(Protocol):
-    def estimate_return(self, batch: Batch) -> TensorLike: ...
+    def estimate_return(self, batch: BatchProtocol) -> TensorLike: ...
 
     def update_step(self, loss: TensorLike) -> None: ...
