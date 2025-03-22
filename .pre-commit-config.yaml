@@ -26,3 +26,9 @@ repos:
         args: [--check]
         language: system
         pass_filenames: false
+      - id: pytest
+        name: pdm run pytest
+        entry: pdm run pytest
+        require_serial: true
+        language: system
+        types: [python]
