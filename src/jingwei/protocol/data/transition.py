@@ -1,9 +1,10 @@
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 from jingwei.infra.typing import ActionType, DoneType, ObservationType
 
 
-class Transition(Protocol):
+@runtime_checkable
+class TransitionProtocol(Protocol):
     observation: ObservationType
     action: ActionType
     observation_next: ObservationType

@@ -1,7 +1,8 @@
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 
-class Rollout(Protocol):
+@runtime_checkable
+class RolloutProtocol(Protocol):
     def rollout(self) -> int: ...
 
     def reset(self) -> None: ...

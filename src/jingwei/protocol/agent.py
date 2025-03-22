@@ -1,9 +1,10 @@
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
-from jingwei.data.batch import Batch
 from jingwei.infra.typing import TensorLike
+from jingwei.protocol.data.batch import BatchProtocol
 
 
+@runtime_checkable
 class Agent(Protocol):
 
     def get_action(self, observation: TensorLike) -> TensorLike: ...
@@ -16,4 +17,4 @@ class Agent(Protocol):
 
     def is_offline(self) -> bool: ...
 
-    def learn(self, batch: Batch) -> None: ...
+    def learn(self, batch: BatchProtocol) -> None: ...
