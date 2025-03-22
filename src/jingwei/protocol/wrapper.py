@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 import gymnasium as gym
 from numpy.typing import DTypeLike, NDArray
@@ -12,6 +12,7 @@ from jingwei.infra.typing import (
 )
 
 
+@runtime_checkable
 class DataWrapperProtocol(Protocol):
 
     def observation_space(self) -> gym.Space: ...
