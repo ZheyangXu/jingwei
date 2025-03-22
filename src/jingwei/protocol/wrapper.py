@@ -12,7 +12,7 @@ from jingwei.infra.typing import (
 )
 
 
-class DataWrapper(Protocol):
+class DataWrapperProtocol(Protocol):
 
     def observation_space(self) -> gym.Space: ...
 
