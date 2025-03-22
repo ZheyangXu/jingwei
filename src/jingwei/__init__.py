@@ -1,6 +1,6 @@
-from jingwei import data, domain, infra, protocol
+from jingwei import data, infra, protocol
 
 
 __version__ = "0.1.0"
 
-__all__ = ["data", "domain", "infra", "protocol"]
+__all__ = ["data", "infra", "protocol"]

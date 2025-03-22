@@ -1,4 +1,4 @@
-from jingwei.infra import typing, wrapper
+from jingwei.infra import functional, typing, wrapper
 
 
-__all__ = ["wrapper", "typing"]
+__all__ = ["wrapper", "typing", "functional"]
