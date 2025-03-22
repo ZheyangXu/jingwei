@@ -7,6 +7,7 @@ from jingwei.infra.typing import TensorLike
 class Batch(object):
     observation: TensorLike
     action: TensorLike
+    reward: TensorLike
     observation_next: TensorLike
     terminated: TensorLike
     truncated: TensorLike

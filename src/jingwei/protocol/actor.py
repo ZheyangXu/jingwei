@@ -1,9 +1,10 @@
-from typing import Any, Dict, List, Protocol, Self
+from typing import Any, Dict, List, Protocol, Self, runtime_checkable
 
-from jingwei.data.batch import Batch
 from jingwei.infra.typing import TensorLike
+from jingwei.protocol.data.batch import BatchProtocol
 
 
+@runtime_checkable
 class Actor(Protocol):
 
     def get_action(self, observation: TensorLike) -> TensorLike: ...
@@ -19,6 +20,7 @@ class Actor(Protocol):
     def set_eval(self, mode: bool) -> bool: ...
 
 
+@runtime_checkable
 class QActor(Actor, Protocol):
 
     def get_q_values(self, observation: TensorLike, action: TensorLike) -> TensorLike: ...
@@ -32,10 +34,11 @@ class QActor(Actor, Protocol):
     def clone(self) -> Self: ...
 
 
+@runtime_checkable
 class PolicyActor(Actor, Protocol):
 
     def get_log_prob(self, observation: TensorLike) -> TensorLike: ...
 
     def get_prob(self, observation: TensorLike) -> TensorLike: ...
 
-    def get_dist(self, batch: Batch) -> Any: ...
+    def get_dist(self, batch: BatchProtocol) -> Any: ...
