@@ -25,7 +25,7 @@ def test_buffer() -> None:
     buffer = MockBuffer(
         buffer_size=100, observation_space=env.observation_space, action_space=env.action_space
     )
-    assert buffer.size() == 0
+    assert buffer.size == 0
     assert buffer.capacity() == 100
     assert buffer.observation_shape == (4,)
     assert buffer.action_shape == (2,)
