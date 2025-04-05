@@ -36,6 +36,7 @@ class Buffer(ABC):
             return self.buffer_size
         return self.pos
 
+    @property
     def size(self) -> int:
         """Get the size of the buffer."""
         return self.__len__()
