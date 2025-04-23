@@ -16,6 +16,9 @@ class MockBuffer(Buffer):
     def _get_batch(self, batch_indexies: list[int]) -> Batch:
         raise NotImplementedError("Get batch method is not implemented for MockBuffer.")
 
+    def reset(self) -> int:
+        return 0
+
 
 def test_buffer() -> None:
     env = gym.make("CartPole-v1")
