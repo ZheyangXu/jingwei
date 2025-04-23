@@ -4,9 +4,9 @@ from typing import Any, Dict, List
 import gymnasium as gym
 import numpy as np
 
-from jingwei.data.batch import Batch
 from jingwei.infra.typing import DeviceType
 from jingwei.infra.utils.env import get_space_shape
+from jingwei.protocol.data import BatchProtocol
 
 
 class Buffer(ABC):
@@ -53,22 +53,17 @@ class Buffer(ABC):
         """Extend the buffer with a list of transitions."""
         return self.size
 
-    def reset(self) -> None:
+    @abstractmethod
+    def reset(self) -> int:
         """Reset the buffer."""
-        self.pos = 0
-        self.full = False
+        pass
 
     @abstractmethod
-    def sample(self, batch_size: int) -> Batch:
+    def sample(self, batch_size: int) -> BatchProtocol:
         """Sample a batch of transitions from the buffer."""
         pass
 
     @abstractmethod
-    def get(self, batch_size: int, is_truncated: bool = False) -> Batch:
-        """Get a batch of transitions from the buffer."""
-        pass
-
-    @abstractmethod
-    def _get_batch(self, batch_indexies: np.ndarray) -> Batch:
+    def _get_batch(self, batch_indexies: np.ndarray) -> BatchProtocol:
         """Get a batch of transitions from the buffer."""
         pass

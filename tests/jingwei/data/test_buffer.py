@@ -13,11 +13,11 @@ class MockBuffer(Buffer):
     def sample(self, batch_size: int) -> Batch:
         raise NotImplementedError("Sample method is not implemented for MockBuffer.")
 
-    def get(self, batch_size: int) -> Batch:
-        raise NotImplementedError("Get method is not implemented for MockBuffer.")
-
     def _get_batch(self, batch_indexies: list[int]) -> Batch:
         raise NotImplementedError("Get batch method is not implemented for MockBuffer.")
+
+    def reset(self) -> int:
+        return 0
 
 
 def test_buffer() -> None:
