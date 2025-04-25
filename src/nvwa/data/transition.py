@@ -12,3 +12,11 @@ class Transition(object):
     observation_next: NDArray
     terminated: bool
     truncate: bool
+
+
+@dataclass(frozen=True)
+class RolloutTransition(Transition):
+    log_prob: float
+    values: float
+    prob: float
+    advantages: float
