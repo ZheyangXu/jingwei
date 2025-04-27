@@ -15,14 +15,14 @@ def test_transition() -> None:
         reward=reward,
         observation_next=observation_next,
         terminated=terminated,
-        truncate=truncated,
+        truncated=truncated,
     )
     assert isinstance(transition.observation, np.ndarray)
     assert isinstance(transition.action, np.int64)
     assert isinstance(transition.reward, float)
     assert isinstance(transition.observation_next, np.ndarray)
     assert isinstance(transition.terminated, bool)
-    assert isinstance(transition.truncate, bool)
+    assert isinstance(transition.truncated, bool)
 
 
 def test_rollout_transition() -> None:
@@ -40,7 +40,7 @@ def test_rollout_transition() -> None:
         reward=reward,
         observation_next=observation_next,
         terminated=terminated,
-        truncate=truncated,
+        truncated=truncated,
         log_prob=log_prob,
         values=values,
         prob=prob,
@@ -51,7 +51,7 @@ def test_rollout_transition() -> None:
     assert isinstance(rollout_transition.reward, float)
     assert isinstance(rollout_transition.observation_next, np.ndarray)
     assert isinstance(rollout_transition.terminated, bool)
-    assert isinstance(rollout_transition.truncate, bool)
+    assert isinstance(rollout_transition.truncated, bool)
     assert isinstance(rollout_transition.log_prob, float)
     assert isinstance(rollout_transition.values, float)
     assert isinstance(rollout_transition.prob, float)

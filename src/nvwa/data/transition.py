@@ -11,7 +11,7 @@ class Transition(object):
     reward: float
     observation_next: NDArray
     terminated: bool
-    truncate: bool
+    truncated: bool
 
 
 @dataclass(frozen=True)
