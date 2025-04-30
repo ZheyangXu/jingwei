@@ -1,0 +1,28 @@
+import gymnasium as gym
+import numpy as np
+import torch
+from numpy.typing import NDArray
+
+from nvwa.infra.functional import get_observation_shape, get_action_dimension
+
+
+class DataWrapper(object):
+    def __init__(
+        self,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        dtype: torch.dtype = torch.float32,
+        device: torch.device | str = torch.device("cpu"),
+    ) -> None:
+        self.observation_space = observation_space
+        self.action_space = action_space
+        self.dtype = dtype
+        self.device = device
+        self.observation_shape = get_observation_shape(observation_space)
+        self.action_dimension = get_action_dimension(action_space)
+
+    def to_tensor(self, data: NDArray) -> torch.Tensor:
+        return torch.tensor(data, dtype=self.dtype, device=self.device)
+
+    def to_numpy(self, data: torch.Tensor) -> NDArray:
+        return data.detach().cpu().numpy()
