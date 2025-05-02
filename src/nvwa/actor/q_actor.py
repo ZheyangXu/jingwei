@@ -45,5 +45,10 @@ class QActor(BaseActor):
     def clone(self) -> Self:
         return deepcopy(self)
 
+    @property
     def is_target_actor(self) -> bool:
         return self._is_target_actor
+
+    @is_target_actor.setter
+    def is_target_actor(self, value: bool) -> None:
+        self._is_target_actor = value

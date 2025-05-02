@@ -23,5 +23,4 @@ class Critic(object):
         loss.backward()
         self.optimizer.step()
 
-    def dtype(self) -> torch.dtype:
-        self.mdoel.weight.dtype
+    def dtype(self) -> torch.dtype: ...

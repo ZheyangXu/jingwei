@@ -26,3 +26,18 @@ class DataWrapper(object):
 
     def to_numpy(self, data: torch.Tensor) -> NDArray:
         return data.detach().cpu().numpy()
+
+    def wrap_observation(self, observation: np.ndarray) -> torch.Tensor:
+        return self.to_tensor(observation)
+
+    def unwrap_observation(self, observation: torch.Tensor) -> NDArray:
+        return self.to_numpy(observation)
+
+    def wrap_action(self, action: NDArray | int) -> torch.Tensor:
+        return self.to_tensor(action)
+
+    def unwrap_action(self, action: torch.Tensor) -> NDArray | int:
+        if isinstance(self.action_space, gym.spaces.Discrete):
+            return action.item()
+        else:
+            return self.to_numpy(action)
