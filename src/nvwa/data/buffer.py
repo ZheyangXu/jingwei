@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Generator, List
 
 import gymnasium as gym
 import numpy as np
@@ -117,9 +117,14 @@ class RolloutBuffer(BaseBuffer):
         self.observation = torch.zeros(
             (self.buffer_size, *self.observation_shape), dtype=torch.float32, device=self.device
         )
-        self.action = torch.zeros(
-            (self.buffer_size, self.action_dimension), dtype=torch.float32, device=self.device
-        )
+        if isinstance(self.action_space, gym.spaces.Discrete):
+            self.action = torch.zeros(
+                (self.buffer_size, 1), dtype=torch.float32, device=self.device
+            )
+        else:
+            self.action = torch.zeros(
+                (self.buffer_size, self.action_dimension), dtype=torch.float32, device=self.device
+            )
         self.reward = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
         self.observation_next = torch.zeros_like(self.observation)
         self.terminated = torch.zeros((self.buffer_size,), dtype=torch.bool, device=self.device)
@@ -128,6 +133,12 @@ class RolloutBuffer(BaseBuffer):
         self.log_prob = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
         self.prob = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
         self.advantages = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
+        return self.pos
+
+    def reset(self) -> int:
+        self.pos = 0
+        self.full = False
+        self._init_buffer()
         return self.pos
 
     def put(self, rollout_transition: RolloutTransition) -> int:
@@ -160,3 +171,10 @@ class RolloutBuffer(BaseBuffer):
             prob=self.prob[batch_indices],
             advantages=self.advantages[batch_indices],
         )
+
+    def get_batch(self, batch_size: int) -> Generator[RolloutBatch]:
+        indices = np.random.permutation(self.size())
+        start_index = 0
+        while start_index < self.size():
+            yield self._get_batch(indices[start_index : start_index + batch_size])
+            start_index += batch_size
