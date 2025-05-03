@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Tuple
 
 import torch
 
@@ -19,4 +20,13 @@ class OffPolicyAlgorithm(Algorithm):
     def get_behavior_action(self, observation: torch.Tensor) -> torch.Tensor: ...
 
 
-class OnPolicyAlgorithm(Algorithm): ...
+class OnPolicyAlgorithm(Algorithm):
+    @abstractmethod
+    def evaluate_action(
+        self, observation: torch.Tensor, action: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: ...
+
+    @abstractmethod
+    def estimate_value(
+        self, observation: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: ...
