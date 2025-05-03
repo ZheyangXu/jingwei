@@ -36,7 +36,7 @@ class DataWrapper(object):
     def wrap_action(self, action: NDArray | int) -> torch.Tensor:
         return self.to_tensor(action)
 
-    def unwrap_action(self, action: torch.Tensor) -> NDArray | int:
+    def unwrap_action(self, action: torch.Tensor | int) -> NDArray | int:
         if isinstance(self.action_space, gym.spaces.Discrete):
             return action.item()
         else:

@@ -3,6 +3,7 @@ from typing import List
 
 import gymnasium as gym
 import numpy as np
+import torch
 
 from nvwa.data.batch import Batch, RolloutBatch
 from nvwa.data.transition import RolloutTransition, Transition
@@ -15,6 +16,7 @@ class BaseBuffer(ABC):
         buffer_size: int,
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
+        device: torch.device = torch.device("cpu"),
     ) -> None:
         self.buffer_size = buffer_size
         self.observation_space = observation_space
@@ -24,6 +26,7 @@ class BaseBuffer(ABC):
         self.action_dimension = get_action_dimension(action_space)
         self.pos = 0
         self.full = False
+        self.device = device
 
     def size(self) -> int:
         if self.full:
@@ -50,22 +53,29 @@ class BaseBuffer(ABC):
 
 class ReplayBuffer(BaseBuffer):
     def __init__(
-        self, buffer_size: int, observation_space: gym.spaces.Space, action_space: gym.spaces.Space
+        self,
+        buffer_size: int,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        device: torch.device = torch.device("cpu"),
     ) -> None:
-        super().__init__(buffer_size, observation_space, action_space)
+        super().__init__(buffer_size, observation_space, action_space, device)
         self._init_buffer()
 
     def _init_buffer(self) -> int:
-        self.observation = np.zeros(
-            (self.buffer_size, *self.observation_shape), dtype=self.observation_space.dtype
+        self.observation = torch.zeros(
+            (self.buffer_size, *self.observation_shape), dtype=torch.float32, device=self.device
         )
-        self.action = np.zeros(
-            (self.buffer_size, self.action_dimension), dtype=self.action_space.dtype
-        )
-        self.reward = np.zeros((self.buffer_size,), dtype=np.float32)
-        self.observation_next = np.zeros_like(self.observation)
-        self.terminated = np.zeros((self.buffer_size,), dtype=np.bool)
-        self.truncated = np.zeros((self.buffer_size,), dtype=np.bool)
+        if isinstance(self.action_space, gym.spaces.Discrete):
+            self.action = torch.zeros((self.buffer_size, 1), dtype=torch.long, device=self.device)
+        else:
+            self.action = torch.zeros(
+                (self.buffer_size, self.action_dimension), dtype=torch.float32, device=self.device
+            )
+        self.reward = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
+        self.observation_next = torch.zeros_like(self.observation)
+        self.terminated = torch.zeros((self.buffer_size,), dtype=torch.bool)
+        self.truncated = torch.zeros((self.buffer_size,), dtype=torch.bool)
         return self.pos
 
     def put(self, transition: Transition) -> int:
@@ -94,26 +104,30 @@ class ReplayBuffer(BaseBuffer):
 
 class RolloutBuffer(BaseBuffer):
     def __init__(
-        self, buffer_size: int, observation_space: gym.spaces.Space, action_space: gym.spaces.Space
+        self,
+        buffer_size: int,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        device: torch.device = torch.device("cpu"),
     ) -> None:
-        super().__init__(buffer_size, observation_space, action_space)
+        super().__init__(buffer_size, observation_space, action_space, device)
         self._init_buffer()
 
     def _init_buffer(self) -> int:
-        self.observation = np.zeros(
-            (self.buffer_size, *self.observation_shape), dtype=self.observation_space.dtype
+        self.observation = torch.zeros(
+            (self.buffer_size, *self.observation_shape), dtype=torch.float32, device=self.device
         )
-        self.action = np.zeros(
-            (self.buffer_size, self.action_dimension), dtype=self.action_space.dtype
+        self.action = torch.zeros(
+            (self.buffer_size, self.action_dimension), dtype=torch.float32, device=self.device
         )
-        self.reward = np.zeros((self.buffer_size,), dtype=np.float32)
-        self.observation_next = np.zeros_like(self.observation)
-        self.terminated = np.zeros((self.buffer_size,), dtype=np.bool)
-        self.truncated = np.zeros((self.buffer_size,), dtype=np.bool)
-        self.value = np.zeros((self.buffer_size,), dtype=np.float32)
-        self.log_prob = np.zeros((self.buffer_size,), dtype=np.float32)
-        self.prob = np.zeros((self.buffer_size,), dtype=np.float32)
-        self.advantages = np.zeros((self.buffer_size,), dtype=np.float32)
+        self.reward = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
+        self.observation_next = torch.zeros_like(self.observation)
+        self.terminated = torch.zeros((self.buffer_size,), dtype=torch.bool, device=self.device)
+        self.truncated = torch.zeros((self.buffer_size,), dtype=torch.bool, device=self.device)
+        self.value = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
+        self.log_prob = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
+        self.prob = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
+        self.advantages = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
         return self.pos
 
     def put(self, rollout_transition: RolloutTransition) -> int:
