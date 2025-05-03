@@ -5,16 +5,16 @@ import gymnasium as gym
 
 from nvwa.actor.q_actor import QActor
 from nvwa.data.batch import Batch
-from nvwa.algorithm.base import Algorithm
+from nvwa.algorithm.base import OffPolicyAlgorithm
 
 
-class DQN(Algorithm):
+class DQN(OffPolicyAlgorithm):
     def __init__(
         self,
         actor: QActor,
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
-        gamma: float,
+        gamma: float = 0.99,
         target_update_step: int = 2,
         epsilon: float = 0.1,
     ) -> None:
@@ -28,25 +28,32 @@ class DQN(Algorithm):
         self.gamma = gamma
         self.global_step = 0
 
-    def get_action_from_behavior(self, observation: torch.Tensor) -> torch.Tensor:
+    def get_behavior_action(self, observation: torch.Tensor) -> torch.Tensor:
         if random.uniform(0, 1) < self.epsilon:
-            self.action_space.sample()
+            return torch.tensor(self.action_space.sample())
         else:
-            self.actor.get_action(observation)
-    
+            return self.actor.get_action(observation)
+
     def get_action(self, observation: torch.Tensor) -> torch.Tensor:
         return self.actor.get_action(observation)
 
     def update(self, batch: Batch) -> None:
-        q_values = self.actor.get_q_values(batch.observation)
+        q_values = self.actor.get_max_q_values(batch.observation, batch.action)
         max_next_q_values = self.target_actor.get_max_q_values(batch.observation_next)
-        q_targets = batch.reward + self.gamma * max_next_q_values * (1 - batch.terminated)
+        q_targets = batch.reward + self.gamma * max_next_q_values * (
+            1 - torch.logical_or(batch.terminated, batch.truncated).float()
+        )
 
         loss = torch.mean(F.mse_loss(q_values, q_targets))
         self.actor.update_step(loss)
         self.global_step += 1
         if self.global_step % self.target_update_step == 0:
             self.target_actor.update_target(self.actor)
+        return {
+            "loss": loss.item(),
+            "q_values": q_values.mean().item(),
+            "q_targets": q_targets.mean().item(),
+        }
 
     def is_off_policy(self) -> bool:
         return True

@@ -24,13 +24,17 @@ class QActor(BaseActor):
     def get_q_values(self, observation: torch.Tensor) -> torch.Tensor:
         return self.model(observation)
 
+    def get_action(self, observation: torch.Tensor) -> torch.Tensor | int:
+        action_dist = self.model(observation)
+        return action_dist.argmax()
+
     def get_max_q_values(
         self, observation: torch.Tensor, action: Optional[torch.Tensor] = None
     ) -> torch.Tensor:
-        if action:
-            max_q_values = self.model(observation).gather(1, action.astype(torch.int64)).squeeze(1)
+        if action is not None:
+            max_q_values = self.model(observation).gather(1, action.long())
         else:
-            max_q_values = self.model(observation).max(1)
+            max_q_values = self.model(observation).max(1)[0]
 
         return max_q_values
 
