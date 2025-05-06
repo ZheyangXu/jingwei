@@ -1,11 +1,12 @@
 import random
+
+import gymnasium as gym
 import torch
 import torch.nn.functional as F
-import gymnasium as gym
 
 from nvwa.actor.q_actor import QActor
-from nvwa.data.batch import Batch
 from nvwa.algorithm.base import OffPolicyAlgorithm
+from nvwa.data.batch import Batch
 
 
 class DQN(OffPolicyAlgorithm):
@@ -40,6 +41,7 @@ class DQN(OffPolicyAlgorithm):
     def update(self, batch: Batch) -> None:
         q_values = self.actor.get_max_q_values(batch.observation, batch.action)
         max_next_q_values = self.target_actor.get_max_q_values(batch.observation_next)
+
         q_targets = batch.reward + self.gamma * max_next_q_values * (
             1 - torch.logical_or(batch.terminated, batch.truncated).float()
         )

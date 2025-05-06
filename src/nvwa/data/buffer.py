@@ -8,6 +8,7 @@ import torch
 from nvwa.data.batch import Batch, RolloutBatch
 from nvwa.data.transition import RolloutTransition, Transition
 from nvwa.infra.functional import get_action_dimension, get_observation_shape
+from nvwa.infra.wrapper import DataWrapper
 
 
 class BaseBuffer(ABC):
@@ -17,6 +18,7 @@ class BaseBuffer(ABC):
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
         device: torch.device = torch.device("cpu"),
+        dtype: torch.dtype = torch.float32,
     ) -> None:
         self.buffer_size = buffer_size
         self.observation_space = observation_space
@@ -24,17 +26,50 @@ class BaseBuffer(ABC):
 
         self.observation_shape = get_observation_shape(observation_space)
         self.action_dimension = get_action_dimension(action_space)
+        self.device = device
+        self.dtype = dtype
+        self.wrapper = DataWrapper(observation_space, action_space, dtype, device)
+        self._init_buffer()
+
+    def _init_buffer(self) -> int:
         self.pos = 0
         self.full = False
-        self.device = device
+        self.observation = np.zeros(
+            (self.buffer_size, *self.observation_shape), dtype=self.observation_space.dtype
+        )
+        if isinstance(self.action_space, gym.spaces.Discrete):
+            self.action = np.zeros((self.buffer_size, 1), dtype=self.action_space.dtype)
+        else:
+            self.action = np.zeros(
+                (self.buffer_size, self.action_dimension), dtype=self.action_space.dtype
+            )
+        self.reward = np.zeros((self.buffer_size, 1), dtype=np.float32)
+        self.observation_next = np.zeros_like(self.observation)
+        self.terminated = np.zeros((self.buffer_size, 1), dtype=np.bool_)
+        self.truncated = np.zeros((self.buffer_size, 1), dtype=np.bool_)
+        return self.size()
 
     def size(self) -> int:
         if self.full:
             return self.buffer_size
         return self.pos
 
-    def put(self, *args, **kwargs) -> int:
+    def put(self, transition: Transition, *args, **kwargs) -> int:
+        self.observation[self.pos] = transition.observation
+        self.action[self.pos] = transition.action
+        self.observation_next[self.pos] = transition.observation_next
+        self.reward[self.pos] = transition.reward
+        self.terminated[self.pos] = transition.terminated
+        self.truncated[self.pos] = transition.truncated
+        self.pos += 1
+        if self.pos >= self.buffer_size:
+            self.full = True
+            self.pos = 0
         return self.size()
+
+    def reset(self) -> int:
+        self._init_buffer()
+        return self.pos
 
     def extend(self, *args, **kwargs) -> int:
         for data in zip(*args):
@@ -58,47 +93,18 @@ class ReplayBuffer(BaseBuffer):
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
         device: torch.device = torch.device("cpu"),
+        dtype: torch.dtype = torch.float32,
     ) -> None:
-        super().__init__(buffer_size, observation_space, action_space, device)
-        self._init_buffer()
-
-    def _init_buffer(self) -> int:
-        self.observation = torch.zeros(
-            (self.buffer_size, *self.observation_shape), dtype=torch.float32, device=self.device
-        )
-        if isinstance(self.action_space, gym.spaces.Discrete):
-            self.action = torch.zeros((self.buffer_size, 1), dtype=torch.long, device=self.device)
-        else:
-            self.action = torch.zeros(
-                (self.buffer_size, self.action_dimension), dtype=torch.float32, device=self.device
-            )
-        self.reward = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
-        self.observation_next = torch.zeros_like(self.observation)
-        self.terminated = torch.zeros((self.buffer_size,), dtype=torch.bool)
-        self.truncated = torch.zeros((self.buffer_size,), dtype=torch.bool)
-        return self.pos
-
-    def put(self, transition: Transition) -> int:
-        self.observation[self.pos] = transition.observation
-        self.action[self.pos] = transition.action
-        self.reward[self.pos] = transition.reward
-        self.observation_next[self.pos] = transition.observation_next
-        self.terminated[self.pos] = transition.terminated
-        self.truncated[self.pos] = transition.truncated
-        self.pos += 1
-        if self.pos >= self.buffer_size:
-            self.full = True
-            self.pos = 0
-        return self.size()
+        super().__init__(buffer_size, observation_space, action_space, device, dtype)
 
     def _get_batch(self, batch_indices: List[int]) -> Batch:
         return Batch(
-            observation=self.observation[batch_indices],
-            action=self.action[batch_indices],
-            reward=self.reward[batch_indices],
-            observation_next=self.observation_next[batch_indices],
-            terminated=self.terminated[batch_indices],
-            truncated=self.truncated[batch_indices],
+            observation=self.wrapper.wrap_observation(self.observation[batch_indices]),
+            action=self.wrapper.wrap_action(self.action[batch_indices]),
+            reward=self.wrapper.to_tensor(self.reward[batch_indices]),
+            observation_next=self.wrapper.wrap_observation(self.observation_next[batch_indices]),
+            terminated=self.wrapper.to_tensor(self.terminated[batch_indices]),
+            truncated=self.wrapper.to_tensor(self.truncated[batch_indices]),
         )
 
 
@@ -109,64 +115,37 @@ class RolloutBuffer(BaseBuffer):
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
         device: torch.device = torch.device("cpu"),
+        dtype: torch.dtype = torch.float32,
     ) -> None:
-        super().__init__(buffer_size, observation_space, action_space, device)
+        super(RolloutBuffer, self).__init__(
+            buffer_size, observation_space, action_space, device, dtype
+        )
         self._init_buffer()
 
     def _init_buffer(self) -> int:
-        self.observation = torch.zeros(
-            (self.buffer_size, *self.observation_shape), dtype=torch.float32, device=self.device
-        )
-        if isinstance(self.action_space, gym.spaces.Discrete):
-            self.action = torch.zeros(
-                (self.buffer_size, 1), dtype=torch.float32, device=self.device
-            )
-        else:
-            self.action = torch.zeros(
-                (self.buffer_size, self.action_dimension), dtype=torch.float32, device=self.device
-            )
-        self.reward = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
-        self.observation_next = torch.zeros_like(self.observation)
-        self.terminated = torch.zeros((self.buffer_size,), dtype=torch.bool, device=self.device)
-        self.truncated = torch.zeros((self.buffer_size,), dtype=torch.bool, device=self.device)
-        self.value = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
-        self.log_prob = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
-        self.prob = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
-        return self.pos
-
-    def reset(self) -> int:
-        self.pos = 0
-        self.full = False
-        self._init_buffer()
-        return self.pos
+        super()._init_buffer()
+        self.value = np.zeros((self.buffer_size,), dtype=np.float32)
+        self.log_prob = np.zeros((self.buffer_size,), dtype=np.float32)
+        self.prob = np.zeros((self.buffer_size,), dtype=np.float32)
+        self.advantages = np.zeros((self.buffer_size,), dtype=np.float32)
+        return self.size()
 
     def put(self, rollout_transition: RolloutTransition) -> int:
-        self.observation[self.pos] = rollout_transition.observation
-        self.action[self.pos] = rollout_transition.action
-        self.reward[self.pos] = rollout_transition.reward
-        self.observation_next[self.pos] = rollout_transition.observation_next
-        self.terminated[self.pos] = rollout_transition.terminated
-        self.truncated[self.pos] = rollout_transition.truncated
+        super().put(rollout_transition)
         self.value[self.pos] = rollout_transition.values
         self.log_prob[self.pos] = rollout_transition.log_prob
-        self.prob[self.pos] = rollout_transition.prob
-        self.pos += 1
-        if self.pos >= self.buffer_size:
-            self.full = True
-            self.pos = 0
         return self.size()
 
     def _get_batch(self, batch_indices: List[int]) -> RolloutBatch:
         return RolloutBatch(
-            observation=self.observation[batch_indices],
-            action=self.action[batch_indices],
-            reward=self.reward[batch_indices],
-            observation_next=self.observation_next[batch_indices],
-            terminated=self.terminated[batch_indices],
-            truncated=self.truncated[batch_indices],
-            log_prob=self.log_prob[batch_indices],
-            values=self.value[batch_indices],
-            prob=self.prob[batch_indices],
+            observation=self.wrapper.wrap_observation(self.observation[batch_indices]),
+            action=self.wrapper.wrap_action(self.action[batch_indices]),
+            reward=self.wrapper.to_tensor(self.reward[batch_indices]),
+            observation_next=self.wrapper.wrap_observation(self.observation_next[batch_indices]),
+            terminated=self.wrapper.to_tensor(self.terminated[batch_indices]),
+            truncated=self.wrapper.to_tensor(self.truncated[batch_indices]),
+            log_prob=self.wrapper.to_tensor(self.log_prob[batch_indices]),
+            values=self.wrapper.to_tensor(self.value[batch_indices]),
         )
 
     def get_batch(self, batch_size: int) -> Generator[RolloutBatch]:
@@ -175,3 +154,5 @@ class RolloutBuffer(BaseBuffer):
         while start_index < self.size():
             yield self._get_batch(indices[start_index : start_index + batch_size])
             start_index += batch_size
+
+    def compute_advantage(self, num_episodes: int) -> None: ...

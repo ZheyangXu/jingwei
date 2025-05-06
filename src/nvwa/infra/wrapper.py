@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from numpy.typing import NDArray
 
-from nvwa.infra.functional import get_observation_shape, get_action_dimension
+from nvwa.infra.functional import get_action_dimension, get_observation_shape
 
 
 class DataWrapper(object):
@@ -28,6 +28,8 @@ class DataWrapper(object):
         return data.detach().cpu().numpy()
 
     def wrap_observation(self, observation: np.ndarray) -> torch.Tensor:
+        if observation.ndim == 1:
+            observation = observation.reshape(1, -1)
         return self.to_tensor(observation)
 
     def unwrap_observation(self, observation: torch.Tensor) -> NDArray:

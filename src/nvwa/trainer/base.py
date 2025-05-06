@@ -1,189 +1,58 @@
 from abc import ABC, abstractmethod
 
 import gymnasium as gym
-import numpy as np
 import torch
-from torch import Tensor
 
-from nvwa.algorithm.base import OffPolicyAlgorithm, OnPolicyAlgorithm
-from nvwa.data.batch import Batch
-from nvwa.data.buffer import ReplayBuffer, RolloutBuffer
-from nvwa.data.transition import RolloutTransition, Transition
+from nvwa.algorithm.base import Algorithm
 from nvwa.infra.wrapper import DataWrapper
 
 
-class OffPolicyTrainer(object):
+class BaseTrainer(ABC):
     def __init__(
         self,
-        algo: OffPolicyAlgorithm,
+        algo: Algorithm,
         env: gym.Env,
         buffer_size: int = 10000,
-        minimal_size: int = 320,
         max_epochs: int = 200,
         batch_size: int = 32,
-        device: torch.device | str = torch.device("cpu"),
+        device: torch.device | str = torch.get_default_device(),
         dtype: torch.dtype = torch.float32,
         gradient_step: int = 1,
-        num_episodes_per_evaluation: int = 2,
+        eval_episode_count: int = 2,
     ) -> None:
+        super().__init__()
         self.algo = algo
         self.env = env
         self.buffer_size = buffer_size
-        self.buffer = self._init_buffer()
         self.max_epochs = max_epochs
-        self.minimal_size = minimal_size
         self.batch_size = batch_size
         self.device = device
         self.dtype = dtype
         self.wrapper = DataWrapper(self.env.observation_space, self.env.action_space, dtype, device)
         self.gradient_step = gradient_step
-        self.num_episodes_per_evaluation = num_episodes_per_evaluation
+        self.eval_episode_count = eval_episode_count
+        self._init_buffer()
 
-    def _init_buffer(self) -> ReplayBuffer:
-        return ReplayBuffer(self.buffer_size, self.env.observation_space, self.env.action_space)
+    @abstractmethod
+    def _init_buffer(self) -> None: ...
 
-    def rollout(self) -> int:
-        num_transitions = 0
-        observation, _ = self.env.reset()
-        observation = self.wrapper.wrap_observation(observation)
-        while num_transitions < self.minimal_size:
-            action = self.algo.get_behavior_action(observation)
-            observation_next, reward, terminated, truncated, info = self.env.step(
-                self.wrapper.unwrap_action(action)
-            )
-            observation_next = self.wrapper.wrap_observation(observation_next)
-            transition = Transition(
-                observation, action, reward, observation_next, terminated, truncated
-            )
-            self.buffer.put(transition)
-            observation = observation_next
-            num_transitions += 1
-            if terminated or truncated:
-                observation, info = self.env.reset()
-                observation = self.wrapper.wrap_observation(observation)
-
-        return self.buffer.size()
+    @abstractmethod
+    def rollout(self) -> int: ...
 
     def evaluate(self) -> float:
         total_reward = 0.0
-        for _ in range(self.num_episodes_per_evaluation):
+        for _ in range(self.eval_episode_count):
             observation, _ = self.env.reset()
-            observation = self.wrapper.wrap_observation(observation)
             done = False
             while not done:
-                action = self.algo.get_action(observation)
-                observation_next, reward, terminated, truncated, info = self.env.step(
-                    self.wrapper.unwrap_action(action)
-                )
-                observation_next = self.wrapper.wrap_observation(observation_next)
+                action = self.algo.get_action(self.wrapper.wrap_observation(observation))
+                action = self.wrapper.unwrap_action(action)
+                observation_next, reward, terminated, truncated, info = self.env.step(action)
                 observation = observation_next
                 total_reward += reward
                 done = terminated or truncated
 
-        return total_reward / self.num_episodes_per_evaluation
+        return total_reward / self.eval_episode_count
 
-    def train(self) -> None:
-        for epoch in range(self.max_epochs):
-            self.rollout()
-            epoch_loss = 0.0
-            for i in range(self.gradient_step):
-                if self.buffer.size() < self.minimal_size:
-                    break
-                batch = self.buffer.sample(self.batch_size)
-                state = self.algo.update(batch)
-                epoch_loss += state["loss"]
-            print(f"epoch {epoch}, loss {epoch_loss:.4f}")
-
-            if epoch % 10 == 0:
-                eval_reward = self.evaluate()
-                print(f"epoch {epoch}, evaluation reward: {eval_reward:.4f}")
-
-
-class OnPolicyTrainer(object):
-    def __init__(
-        self,
-        algo: OnPolicyAlgorithm,
-        env: gym.Env,
-        buffer_size: int = 1000,
-        max_epochs: int = 200,
-        batch_size: int = 32,
-        n_rollout_steps: int = 2048,
-        gradient_step: int = 2,
-        device: torch.device | str = torch.device("cpu"),
-        dtype: torch.dtype = torch.float32,
-        num_episodes_per_evaluation: int = 2,
-    ) -> None:
-        self.algo = algo
-        self.env = env
-        self.buffer_size = buffer_size
-        self.max_epochs = max_epochs
-        self.batch_size = batch_size
-        self.n_rollout_steps = n_rollout_steps
-        self.gradient_step = gradient_step
-        self.device = device
-        self.dtype = dtype
-        self.buffer = self._init_buffer()
-        self.wrapper = DataWrapper(self.env.observation_space, self.env.action_space)
-        self.num_episodes_per_evaluation = num_episodes_per_evaluation
-
-    def _init_buffer(self) -> RolloutBuffer:
-        return RolloutBuffer(self.buffer_size, self.env.observation_space, self.env.action_space)
-
-    def evaluate(self) -> float:
-        total_reward = 0.0
-        for _ in range(self.num_episodes_per_evaluation):
-            observation, _ = self.env.reset()
-            observation = self.wrapper.wrap_observation(observation)
-            done = False
-            while not done:
-                action = self.algo.get_action(observation)
-                observation_next, reward, terminated, truncated, info = self.env.step(
-                    self.wrapper.unwrap_action(action)
-                )
-                observation_next = self.wrapper.wrap_observation(observation_next)
-                observation = observation_next
-                total_reward += reward
-                done = terminated or truncated
-
-        return total_reward / self.num_episodes_per_evaluation
-
-    def rollout(self) -> int:
-        self.buffer.reset()
-        for n_steps in range(self.n_rollout_steps):
-            observation, _ = self.env.reset()
-            observation = self.wrapper.wrap_observation(observation)
-            done = False
-            while not done:
-                action, values, log_probs = self.algo.estimate_value(observation)
-                observation_next, reward, terminated, truncated, info = self.env.step(
-                    self.wrapper.unwrap_action(action)
-                )
-                observation_next = self.wrapper.wrap_observation(observation_next)
-                transition = RolloutTransition(
-                    observation=observation,
-                    action=action,
-                    reward=reward,
-                    observation_next=observation_next,
-                    terminated=terminated,
-                    truncated=truncated,
-                    values=values,
-                    log_prob=log_probs,
-                    prob=log_probs,
-                )
-                self.buffer.put(transition)
-                observation = observation_next
-                n_steps += 1
-                if terminated or truncated:
-                    break
-        return self.buffer.size()
-
-    def train(self) -> None:
-        for epoch in range(self.max_epochs):
-            self.rollout()
-            for step in range(self.gradient_step):
-                for batch in self.buffer.get_batch(self.batch_size):
-                    self.algo.update(batch)
-
-            if epoch % 10 == 0:
-                eval_reward = self.evaluate()
-                print(f"epoch {epoch}, evaluation reward: {eval_reward:.4f}")
+    @abstractmethod
+    def train(self) -> None: ...

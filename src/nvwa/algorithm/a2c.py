@@ -2,15 +2,11 @@ from typing import Tuple
 
 import torch
 import torch.nn.functional as F
-import numpy as np
-import gymnasium as gym
 
-from nvwa.data.batch import RolloutBatch
-from nvwa.data.transition import RolloutTransition
-from nvwa.data.buffer import RolloutBuffer
 from nvwa.actor.actor import Actor
-from nvwa.critic.base import Critic
 from nvwa.algorithm.base import OnPolicyAlgorithm
+from nvwa.critic.base import Critic
+from nvwa.data.batch import RolloutBatch
 
 
 class ActorCritic(OnPolicyAlgorithm):
@@ -45,7 +41,7 @@ class ActorCritic(OnPolicyAlgorithm):
             batch.observation_next
         ) * (1 - torch.logical_or(batch.terminated, batch.truncated).float())
         td_delta = td_target - self.critic.estimate_return(batch.observation)
-        
+
         log_probs = self.actor.get_log_prob(batch.observation, batch.action)
         actor_loss = torch.mean(-log_probs * td_delta.detach())
         critic_loss = torch.mean(
@@ -53,3 +49,6 @@ class ActorCritic(OnPolicyAlgorithm):
         )
         self.actor.update_step(actor_loss)
         self.critic.update_step(critic_loss)
+        return {
+            "loss": actor_loss.item() + critic_loss.item(),
+        }

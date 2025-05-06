@@ -4,10 +4,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from nvwa.algorithm.ppo import PPO
-from nvwa.trainer.base import OnPolicyTrainer
 from nvwa.actor.actor import Actor
+from nvwa.algorithm.ppo import PPO
 from nvwa.critic.base import Critic
+from nvwa.trainer.base import OnPolicyTrainer
 
 
 class ValueNet(nn.Module):

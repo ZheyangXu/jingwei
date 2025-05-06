@@ -4,9 +4,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from nvwa.algorithm.dqn import DQN
-from nvwa.trainer.base import OffPolicyTrainer
 from nvwa.actor.q_actor import QActor
+from nvwa.algorithm.dqn import DQN
+from nvwa.trainer import OffPolicyTrainer
 
 
 class QNet(nn.Module):
