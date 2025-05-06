@@ -34,7 +34,7 @@ class QActor(BaseActor):
         if action is not None:
             max_q_values = self.model(observation).gather(1, action.long())
         else:
-            max_q_values = self.model(observation).max(1)[0]
+            max_q_values = self.model(observation).max(1)[0].view(-1, 1)
 
         return max_q_values
 

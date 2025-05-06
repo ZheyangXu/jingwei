@@ -29,4 +29,3 @@ class Batch(object):
 class RolloutBatch(Batch):
     log_prob: torch.Tensor
     values: torch.Tensor
-    prob: torch.Tensor
