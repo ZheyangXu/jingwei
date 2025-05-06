@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Tuple
 
+from nvwa.data.buffer import BaseBuffer
 import torch
 
 from nvwa.data.batch import Batch
@@ -12,7 +13,7 @@ class Algorithm(ABC):
     def get_action(self, observation: torch.Tensor) -> torch.Tensor: ...
 
     @abstractmethod
-    def update(self, batch: Batch) -> None: ...
+    def update(self, batch: Batch | BaseBuffer) -> None: ...
 
 
 class OffPolicyAlgorithm(Algorithm):
