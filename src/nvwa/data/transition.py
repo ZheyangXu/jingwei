@@ -19,4 +19,3 @@ class RolloutTransition(Transition):
     log_prob: float
     values: float
     prob: float
-    advantages: float

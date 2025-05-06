@@ -132,7 +132,6 @@ class RolloutBuffer(BaseBuffer):
         self.value = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
         self.log_prob = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
         self.prob = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
-        self.advantages = torch.zeros((self.buffer_size,), dtype=torch.float32, device=self.device)
         return self.pos
 
     def reset(self) -> int:
@@ -151,7 +150,6 @@ class RolloutBuffer(BaseBuffer):
         self.value[self.pos] = rollout_transition.values
         self.log_prob[self.pos] = rollout_transition.log_prob
         self.prob[self.pos] = rollout_transition.prob
-        self.advantages[self.pos] = rollout_transition.advantages
         self.pos += 1
         if self.pos >= self.buffer_size:
             self.full = True
@@ -169,7 +167,6 @@ class RolloutBuffer(BaseBuffer):
             log_prob=self.log_prob[batch_indices],
             values=self.value[batch_indices],
             prob=self.prob[batch_indices],
-            advantages=self.advantages[batch_indices],
         )
 
     def get_batch(self, batch_size: int) -> Generator[RolloutBatch]:

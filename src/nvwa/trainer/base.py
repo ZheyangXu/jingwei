@@ -1,16 +1,15 @@
 from abc import ABC, abstractmethod
 
 import gymnasium as gym
-import torch
 import numpy as np
+import torch
+from torch import Tensor
 
-
+from nvwa.algorithm.base import OffPolicyAlgorithm, OnPolicyAlgorithm
 from nvwa.data.batch import Batch
 from nvwa.data.buffer import ReplayBuffer, RolloutBuffer
 from nvwa.data.transition import RolloutTransition, Transition
 from nvwa.infra.wrapper import DataWrapper
-from nvwa.algorithm.base import OffPolicyAlgorithm, OnPolicyAlgorithm
-from torch import Tensor
 
 
 class OffPolicyTrainer(object):
@@ -108,7 +107,8 @@ class OnPolicyTrainer(object):
         buffer_size: int = 1000,
         max_epochs: int = 200,
         batch_size: int = 32,
-        n_rollout_steps=10,
+        n_rollout_steps: int = 2048,
+        gradient_step: int = 2,
         device: torch.device | str = torch.device("cpu"),
         dtype: torch.dtype = torch.float32,
         num_episodes_per_evaluation: int = 2,
@@ -119,6 +119,7 @@ class OnPolicyTrainer(object):
         self.max_epochs = max_epochs
         self.batch_size = batch_size
         self.n_rollout_steps = n_rollout_steps
+        self.gradient_step = gradient_step
         self.device = device
         self.dtype = dtype
         self.buffer = self._init_buffer()
@@ -168,7 +169,6 @@ class OnPolicyTrainer(object):
                     values=values,
                     log_prob=log_probs,
                     prob=log_probs,
-                    advantages=values,
                 )
                 self.buffer.put(transition)
                 observation = observation_next
@@ -180,8 +180,9 @@ class OnPolicyTrainer(object):
     def train(self) -> None:
         for epoch in range(self.max_epochs):
             self.rollout()
-            for batch in self.buffer.get_batch(self.batch_size):
-                self.algo.update(batch)
+            for step in range(self.gradient_step):
+                for batch in self.buffer.get_batch(self.batch_size):
+                    self.algo.update(batch)
 
             if epoch % 10 == 0:
                 eval_reward = self.evaluate()
