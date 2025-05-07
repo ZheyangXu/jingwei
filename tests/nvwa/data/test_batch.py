@@ -44,7 +44,6 @@ def test_rollout_batch() -> None:
     truncated = torch.randint(0, 2, (4,), dtype=torch.int64, device=device)
     log_prob = torch.randn(4, dtype=dtype, device=device)
     values = torch.randn(4, dtype=dtype, device=device)
-    prob = torch.randn(4, dtype=dtype, device=device)
 
     rollout_batch = RolloutBatch(
         observation=observation,
@@ -55,7 +54,6 @@ def test_rollout_batch() -> None:
         truncated=truncated,
         log_prob=log_prob,
         values=values,
-        prob=prob,
     )
 
     assert isinstance(rollout_batch.observation, torch.Tensor)
@@ -66,7 +64,6 @@ def test_rollout_batch() -> None:
     assert isinstance(rollout_batch.truncated, torch.Tensor)
     assert isinstance(rollout_batch.log_prob, torch.Tensor)
     assert isinstance(rollout_batch.values, torch.Tensor)
-    assert isinstance(rollout_batch.prob, torch.Tensor)
     assert len(rollout_batch) == 4
     assert rollout_batch.observation_dtype() == torch.float32
     assert rollout_batch.action_dtype() == torch.float32
