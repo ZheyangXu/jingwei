@@ -32,7 +32,6 @@ def test_rollout_transition() -> None:
     observation_next, reward, terminated, truncated, info = env.step(action)
     log_prob = np.random.rand()
     values = np.random.rand()
-    prob = np.random.rand()
     rollout_transition = RolloutTransition(
         observation=observation,
         action=action,
@@ -42,7 +41,6 @@ def test_rollout_transition() -> None:
         truncated=truncated,
         log_prob=log_prob,
         values=values,
-        prob=prob,
     )
     assert isinstance(rollout_transition.observation, np.ndarray)
     assert isinstance(rollout_transition.action, np.int64)
@@ -52,5 +50,3 @@ def test_rollout_transition() -> None:
     assert isinstance(rollout_transition.truncated, bool)
     assert isinstance(rollout_transition.log_prob, float)
     assert isinstance(rollout_transition.values, float)
-    assert isinstance(rollout_transition.prob, float)
-    assert isinstance(rollout_transition.advantages, float)

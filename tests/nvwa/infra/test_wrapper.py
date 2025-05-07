@@ -20,6 +20,6 @@ def test_data_wrapper() -> None:
 
     assert torch.equal(wrappered_action, torch.tensor(action))
     assert unwrappered_action == action
-    assert wrappered_observation.shape == (4,)
+    assert wrappered_observation.shape == (1, 4)
     assert unwrappered_observation.shape == (4,)
     assert np.array_equal(unwrappered_observation, observation)

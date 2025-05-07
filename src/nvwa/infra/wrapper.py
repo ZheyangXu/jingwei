@@ -20,6 +20,7 @@ class DataWrapper(object):
         self.device = device
         self.observation_shape = get_observation_shape(observation_space)
         self.action_dimension = get_action_dimension(action_space)
+        self.observation_dim = len(self.observation_shape)
 
     def to_tensor(self, data: NDArray) -> torch.Tensor:
         return torch.tensor(data, dtype=self.dtype, device=self.device)
@@ -28,17 +29,23 @@ class DataWrapper(object):
         return data.detach().cpu().numpy()
 
     def wrap_observation(self, observation: np.ndarray) -> torch.Tensor:
-        if observation.ndim == 1:
+        if observation.ndim == self.observation_dim:
             observation = observation.reshape(1, -1)
         return self.to_tensor(observation)
 
     def unwrap_observation(self, observation: torch.Tensor) -> NDArray:
+        if observation.ndim == self.observation_dim + 1:
+            observation = observation.flatten().reshape(self.observation_shape)
         return self.to_numpy(observation)
 
     def wrap_action(self, action: NDArray | int) -> torch.Tensor:
         return self.to_tensor(action)
 
     def unwrap_action(self, action: torch.Tensor | int) -> NDArray | int:
+        if isinstance(self.action_space, gym.spaces.Discrete):
+            return action.item()
+        else:
+            return self.to_numpy(action)
         if isinstance(self.action_space, gym.spaces.Discrete):
             return action.item()
         else:

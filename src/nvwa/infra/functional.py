@@ -28,8 +28,15 @@ def get_action_dimension(action_space: gym.spaces.Space) -> int:
     elif isinstance(action_space, gym.spaces.MultiDiscrete):
         return len(action_space.nvec)
     elif isinstance(action_space, gym.spaces.MultiBinary):
-        return int(action_space.n)
+        return len(action_space.shape)
     elif isinstance(action_space, gym.spaces.Box):
         return int(np.prod(action_space.shape))
     else:
         raise NotImplementedError(f"{action_space} action space is not supported")
+
+
+def get_observation_dimension(observation_space: gym.spaces.Space) -> int:
+    if isinstance(observation_space, gym.spaces.Discrete):
+        return 1
+    else:
+        return len(observation_space.shape)
