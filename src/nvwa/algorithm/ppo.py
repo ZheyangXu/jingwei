@@ -13,9 +13,9 @@ class PPO(OnPolicyAlgorithm):
         actor: Actor,
         critic: Critic,
         n_epochs: int = 2,
-        gamma: float = 0.9,
+        gamma: float = 0.99,
         lmbda: float = 0.9,
-        eps: float = 0.2,
+        eps: float = 0.1,
         device: torch.device | str = torch.device("cpu"),
     ) -> None:
         self.actor = actor
@@ -37,35 +37,25 @@ class PPO(OnPolicyAlgorithm):
     def evaluate_action(
         self, observation: torch.Tensor, action: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        log_prob = self.actor.get_log_prob(observation, action)
+        latent = self.actor.get_latent(observation)
+        dist = torch.distributions.Categorical(logits=latent)
+        log_prob = dist.log_prob(action.squeeze(-1))
         value = self.critic.estimate_return(observation)
-        return log_prob, value, action
-
-    def compute_advantages(self, batch: RolloutBatch) -> torch.Tensor:
-        advantages = torch.zeros_like(batch.reward)
-        last_advantage = 0
-        for t in reversed(range(len(batch.reward))):
-            if t == len(batch.reward) - 1:
-                last_advantage = 0
-            else:
-                if batch.terminated[t] or batch.truncated[t]:
-                    last_advantage = 0
-                delta = batch.reward[t] + self.gamma * batch.values[t + 1] - batch.values[t]
-                last_advantage = delta + self.gamma * self.lmbda * last_advantage
-            advantages[t] = last_advantage
-        return advantages
+        return value, log_prob.view(-1, 1), dist.entropy()
 
     def update(self, batch: RolloutBatch) -> None:
         values, log_probs, entropy = self.evaluate_action(batch.observation, batch.action)
         ratio = torch.exp(log_probs - batch.log_prob)
 
-        advantages = self.compute_advantages(batch)
+        # advantages = (batch.advantages - batch.advantages.mean()) / (batch.advantages.std() + 1e-8)
+        advantages = batch.advantages
 
         policy_loss_1 = ratio * advantages
         policy_loss_2 = advantages * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
         policy_loss = -torch.min(policy_loss_1, policy_loss_2).mean()
-
-        value_loss = F.mse_loss(values, batch.values)
+        # print(f"returns: {batch.returns}, values: {values}")
+        value_loss = torch.mean(F.mse_loss(values, batch.returns))
 
         self.actor.update_step(policy_loss)
         self.critic.update_step(value_loss)
+        return {"actor_loss": policy_loss.item(), "critic_loss": value_loss.item()}

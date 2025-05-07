@@ -54,6 +54,9 @@ class BaseBuffer(ABC):
             return self.buffer_size
         return self.pos
 
+    def is_full(self) -> bool:
+        return self.full
+
     def put(self, transition: Transition, *args, **kwargs) -> int:
         self.observation[self.pos] = transition.observation
         self.action[self.pos] = transition.action
@@ -124,10 +127,10 @@ class RolloutBuffer(BaseBuffer):
 
     def _init_buffer(self) -> int:
         super()._init_buffer()
-        self.value = np.zeros((self.buffer_size,), dtype=np.float32)
-        self.log_prob = np.zeros((self.buffer_size,), dtype=np.float32)
-        self.prob = np.zeros((self.buffer_size,), dtype=np.float32)
-        self.advantages = np.zeros((self.buffer_size,), dtype=np.float32)
+        self.value = np.zeros((self.buffer_size, 1), dtype=np.float32)
+        self.log_prob = np.zeros((self.buffer_size, 1), dtype=np.float32)
+        self.advantages = np.zeros((self.buffer_size, 1), dtype=np.float32)
+        self.returns = np.zeros((self.buffer_size, 1), dtype=np.float32)
         return self.size()
 
     def put(self, rollout_transition: RolloutTransition) -> int:
@@ -146,13 +149,30 @@ class RolloutBuffer(BaseBuffer):
             truncated=self.wrapper.to_tensor(self.truncated[batch_indices]),
             log_prob=self.wrapper.to_tensor(self.log_prob[batch_indices]),
             values=self.wrapper.to_tensor(self.value[batch_indices]),
+            advantages=self.wrapper.to_tensor(self.advantages[batch_indices]),
+            returns=self.wrapper.to_tensor(self.returns[batch_indices]),
         )
 
-    def get_batch(self, batch_size: int) -> Generator[RolloutBatch]:
+    def get_batch(self, batch_size: int) -> Generator[RolloutBatch, None, None]:
         indices = np.random.permutation(self.size())
         start_index = 0
         while start_index < self.size():
             yield self._get_batch(indices[start_index : start_index + batch_size])
             start_index += batch_size
 
-    def compute_advantage(self, num_episodes: int) -> None: ...
+    def compute_return_and_advantage(
+        self, num_episodes: int, gamma: float = 0.99, gae_lambda: float = 0.98
+    ) -> None:
+        last_advantage = 0
+        for t in range(self.pos, self.pos - num_episodes, -1):
+            next_non_terminal = 1 - np.logical_or(self.terminated[t], self.truncated[t]).astype(
+                np.float32
+            )
+            if t == self.pos:
+                next_value = self.value[t]
+            else:
+                next_value = self.value[t + 1]
+            delta = self.reward[t] + gamma * next_value * next_non_terminal - self.value[t]
+            last_advantage = delta + gamma * gae_lambda * next_non_terminal * last_advantage
+            self.advantages[t] = last_advantage
+            self.returns[t] = last_advantage + self.value[t]
