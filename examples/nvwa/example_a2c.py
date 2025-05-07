@@ -34,10 +34,11 @@ class PolicyNet(nn.Module):
 
 def main():
     env = gym.make("CartPole-v1")
-    q_net = PolicyNet(env.observation_space.shape[0], 128, env.action_space.n)
-    optimizer = optim.Adam(q_net.parameters(), lr=0.001)
-    actor = Actor(q_net, optimizer)
+    policy_net = PolicyNet(env.observation_space.shape[0], 128, env.action_space.n)
     value_net = ValueNet(env.observation_space.shape[0], 128)
+    optimizer = optim.Adam(policy_net.parameters(), lr=0.001)
+    actor = Actor(policy_net, optimizer)
+
     critic_optimizer = optim.Adam(value_net.parameters(), lr=0.001)
     critic = Critic(value_net, critic_optimizer)
     algo = ActorCritic(actor, critic, gamma=0.99)

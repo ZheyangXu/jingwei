@@ -19,7 +19,7 @@ class OnPolicyTrainer(BaseTrainer):
         dtype: torch.dtype = torch.float32,
         gradient_step: int = 1,
         eval_episode_count: int = 2,
-        n_episodes: int = 10,
+        n_episodes: int = 1,
     ) -> None:
         super().__init__(
             algo,
@@ -63,27 +63,33 @@ class OnPolicyTrainer(BaseTrainer):
                     observation_next=observation_next,
                     terminated=terminated,
                     truncated=truncated,
-                    log_prob=log_probs,
-                    values=values,
+                    log_prob=log_probs.item(),
+                    values=values.item(),
                 )
+
                 num_transitions += self.buffer.put(transition)
+                if self.buffer.is_full():
+                    break
                 observation = observation_next
                 done = terminated or truncated
                 num_episodes += 1
-
-            self.buffer.compute_advantage(num_episodes)
+            if self.buffer.is_full():
+                break
+            self.buffer.compute_return_and_advantage(num_episodes, self.algo.gamma)
+        return self.buffer.size()
 
     def train(self) -> None:
         for epoch in range(self.max_epochs):
             self.rollout()
-            epoch_loss = 0.0
+            epoch_loss = {"actor_loss": 0, "critic_loss": 0}
             for step in range(self.gradient_step):
                 for batch in self.buffer.get_batch(self.batch_size):
                     status = self.algo.update(batch)
-                    epoch_loss += status["loss"]
+                    epoch_loss["actor_loss"] += status["actor_loss"]
+                    epoch_loss["critic_loss"] += status["critic_loss"]
 
             if epoch % 10 == 0:
                 eval_reward = self.evaluate()
                 print(
-                    f"Epoch {epoch + 1}/{self.max_epochs}, Loss: {epoch_loss / self.gradient_step:.4f}, Eval Reward: {eval_reward}"
+                    f"Epoch {epoch + 1}/{self.max_epochs}, Actor Loss: {epoch_loss['actor_loss'] / self.gradient_step:.4f}, Critic Loss: {epoch_loss['critic_loss'] / self.gradient_step:.4f}, Eval Reward: {eval_reward}"
                 )
