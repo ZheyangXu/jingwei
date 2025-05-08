@@ -161,7 +161,11 @@ class RolloutBuffer(BaseBuffer):
             start_index += batch_size
 
     def compute_return_and_advantage(
-        self, num_episodes: int, gamma: float = 0.99, gae_lambda: float = 0.98
+        self,
+        num_episodes: int,
+        next_value: float,
+        gamma: float = 0.99,
+        gae_lambda: float = 0.98,
     ) -> None:
         last_advantage = 0
         for t in range(self.pos, self.pos - num_episodes, -1):
@@ -169,10 +173,10 @@ class RolloutBuffer(BaseBuffer):
                 np.float32
             )
             if t == self.pos:
-                next_value = self.value[t]
+                next_value = next_value
             else:
                 next_value = self.value[t + 1]
             delta = self.reward[t] + gamma * next_value * next_non_terminal - self.value[t]
             last_advantage = delta + gamma * gae_lambda * next_non_terminal * last_advantage
             self.advantages[t] = last_advantage
-            self.returns[t] = last_advantage + self.value[t]
+        self.returns = self.advantages + self.value

@@ -36,19 +36,15 @@ def main():
     env = gym.make("CartPole-v1")
     policy_net = PolicyNet(env.observation_space.shape[0], 128, env.action_space.n)
     value_net = ValueNet(env.observation_space.shape[0], 128)
-    optimizer = optim.Adam(policy_net.parameters(), lr=0.001)
-    actor = Actor(policy_net, optimizer)
 
-    critic_optimizer = optim.Adam(value_net.parameters(), lr=0.001)
-    critic = Critic(value_net, critic_optimizer)
-    algo = ActorCritic(actor, critic, gamma=0.99)
+    algo = ActorCritic(policy_net, value_net, 0.001)
 
     trainer = OnPolicyTrainer(
         algo,
         env,
         buffer_size=10000,
-        max_epochs=2300,
-        batch_size=32,
+        max_epochs=5000,
+        batch_size=10000,
         device=torch.device("cpu"),
         dtype=torch.float32,
     )

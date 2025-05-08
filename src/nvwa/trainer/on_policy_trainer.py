@@ -17,9 +17,9 @@ class OnPolicyTrainer(BaseTrainer):
         batch_size: int = 32,
         device: torch.device | str = torch.device("cpu"),
         dtype: torch.dtype = torch.float32,
-        gradient_step: int = 1,
-        eval_episode_count: int = 2,
-        n_episodes: int = 1,
+        gradient_step: int = 2,
+        eval_episode_count: int = 10,
+        n_episodes: int = 10,
     ) -> None:
         super().__init__(
             algo,
@@ -45,14 +45,16 @@ class OnPolicyTrainer(BaseTrainer):
     def rollout(self) -> int:
         self.buffer.reset()
         num_transitions = 0
+        total_reward = 0
         for n_step in range(self.n_episodes):
             observation, _ = self.env.reset()
             done = False
             num_episodes = 0
             while not done:
-                action, values, log_probs = self.algo.estimate_value(
-                    self.wrapper.wrap_observation(observation)
-                )
+                with torch.no_grad():
+                    action, values, log_probs = self.algo.estimate_value(
+                        self.wrapper.wrap_observation(observation)
+                    )
                 action = self.wrapper.unwrap_action(action)
                 observation_next, reward, terminated, truncated, _ = self.env.step(action)
 
@@ -73,23 +75,32 @@ class OnPolicyTrainer(BaseTrainer):
                 observation = observation_next
                 done = terminated or truncated
                 num_episodes += 1
+                total_reward += reward
+            with torch.no_grad():
+                next_value = self.algo.compute_value(
+                    self.wrapper.wrap_observation(observation)
+                ).item()
+            self.buffer.compute_return_and_advantage(
+                num_episodes, next_value, self.algo.gamma, self.algo.gae_lambda
+            )
             if self.buffer.is_full():
                 break
-            self.buffer.compute_return_and_advantage(num_episodes, self.algo.gamma)
-        return self.buffer.size()
+
+        return self.buffer.size(), total_reward / self.n_episodes
 
     def train(self) -> None:
         for epoch in range(self.max_epochs):
-            self.rollout()
-            epoch_loss = {"actor_loss": 0, "critic_loss": 0}
+            num_transitions, reward = self.rollout()
+            epoch_loss = {"actor_loss": 0, "critic_loss": 0, "loss": 0}
             for step in range(self.gradient_step):
                 for batch in self.buffer.get_batch(self.batch_size):
                     status = self.algo.update(batch)
                     epoch_loss["actor_loss"] += status["actor_loss"]
                     epoch_loss["critic_loss"] += status["critic_loss"]
+                    epoch_loss["loss"] += status["loss"]
 
             if epoch % 10 == 0:
                 eval_reward = self.evaluate()
                 print(
-                    f"Epoch {epoch + 1}/{self.max_epochs}, Actor Loss: {epoch_loss['actor_loss'] / self.gradient_step:.4f}, Critic Loss: {epoch_loss['critic_loss'] / self.gradient_step:.4f}, Eval Reward: {eval_reward}"
+                    f"Epoch {epoch}/{self.max_epochs}, Loss: {epoch_loss['loss'] / self.gradient_step:.4f}, Actor Loss: {epoch_loss['actor_loss'] / self.gradient_step:.4f}, Critic Loss: {epoch_loss['critic_loss'] / self.gradient_step:.4f}, Eval Reward: {eval_reward}, rollout Reward: {reward:.4f}, Transitions: {num_transitions}"
                 )
