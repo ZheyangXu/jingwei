@@ -2,11 +2,8 @@ import gymnasium as gym
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
 
-from nvwa.actor.actor import Actor
 from nvwa.algorithm.a2c import ActorCritic
-from nvwa.critic.base import Critic
 from nvwa.trainer import OnPolicyTrainer
 
 
