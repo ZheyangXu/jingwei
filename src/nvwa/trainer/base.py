@@ -45,7 +45,9 @@ class BaseTrainer(ABC):
             observation, _ = self.env.reset()
             done = False
             while not done:
-                action = self.algo.get_action(self.wrapper.wrap_observation(observation), deterministic=True)
+                action = self.algo.get_action(
+                    self.wrapper.wrap_observation(observation), deterministic=True
+                )
                 action = self.wrapper.unwrap_action(action)
                 observation_next, reward, terminated, truncated, info = self.env.step(action)
                 observation = observation_next
