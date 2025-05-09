@@ -35,7 +35,7 @@ class DQN(OffPolicyAlgorithm):
         else:
             return self.actor.get_action(observation)
 
-    def get_action(self, observation: torch.Tensor) -> torch.Tensor:
+    def get_action(self, observation: torch.Tensor, deterministic: bool = False) -> torch.Tensor:
         return self.actor.get_action(observation)
 
     def update(self, batch: Batch) -> None:
