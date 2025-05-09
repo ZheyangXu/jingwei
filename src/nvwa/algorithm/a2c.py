@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from nvwa.algorithm.base import OnPolicyAlgorithm
+from nvwa.algorithm.on_policy import OnPolicyAlgorithm
 from nvwa.data.batch import RolloutBatch
 
 

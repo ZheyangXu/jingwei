@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 
 from nvwa.actor.q_actor import QActor
-from nvwa.algorithm.base import OffPolicyAlgorithm
+from nvwa.algorithm.off_policy import OffPolicyAlgorithm
 from nvwa.data.batch import Batch
 
 

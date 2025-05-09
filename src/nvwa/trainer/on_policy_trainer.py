@@ -1,7 +1,7 @@
 import gymnasium as gym
 import torch
 
-from nvwa.algorithm.base import OnPolicyAlgorithm
+from nvwa.algorithm.on_policy import OnPolicyAlgorithm
 from nvwa.data.buffer import RolloutBuffer
 from nvwa.data.transition import RolloutTransition
 from nvwa.trainer.base import BaseTrainer
