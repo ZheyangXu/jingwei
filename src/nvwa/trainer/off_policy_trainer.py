@@ -19,9 +19,18 @@ class OffPolicyTrainer(BaseTrainer):
         device: torch.device | str = torch.device("cpu"),
         dtype: torch.dtype = torch.float32,
         gradient_step: int = 1,
+        eval_episode_count: int = 10,
     ) -> None:
         super().__init__(
-            algo, env, buffer_size, max_epochs, batch_size, device, dtype, gradient_step
+            algo,
+            env,
+            buffer_size,
+            max_epochs,
+            batch_size,
+            device,
+            dtype,
+            gradient_step,
+            eval_episode_count,
         )
         self.minimal_size = minimal_size
 
@@ -58,10 +67,9 @@ class OffPolicyTrainer(BaseTrainer):
                 batch = self.buffer.sample(self.batch_size)
                 status = self.algo.update(batch)
                 epoch_loss += status["loss"]
-            print(
-                f"Epoch {epoch + 1}/{self.max_epochs}, Loss: {epoch_loss / self.gradient_step:.4f}"
-            )
 
             if epoch % 10 == 0:
                 eval_reward = self.evaluate()
-                print(f"Epoch: {epoch + 1}/{self.max_epochs}, Evaluation Reward: {eval_reward:.4f}")
+                print(
+                    f"Epoch {epoch + 1}/{self.max_epochs}, Loss: {epoch_loss / self.gradient_step:.4f}, Evaluation Reward: {eval_reward:.4f}"
+                )

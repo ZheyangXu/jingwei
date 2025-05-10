@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from operator import is_
 from typing import Tuple
 
 import torch
