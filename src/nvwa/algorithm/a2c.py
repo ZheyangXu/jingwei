@@ -1,9 +1,11 @@
-from typing import Optional, Tuple
+from operator import is_
+from typing import Literal, Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from numpy import isin
 
 from nvwa.algorithm.on_policy import OnPolicyAlgorithm
 from nvwa.data.batch import RolloutBatch
@@ -16,7 +18,7 @@ class ActorCritic(nn.Module, OnPolicyAlgorithm):
         critic: nn.Module,
         learning_rate: float = 0.001,
         distribution: Optional[torch.distributions.Distribution] = None,
-        gamma: float = 0.98,
+        discount_factor: float = 0.98,
         gae_lambda: float = 0.95,
         entropy_coef: float = 0.0,
         vf_coef: float = 0.5,
@@ -24,20 +26,26 @@ class ActorCritic(nn.Module, OnPolicyAlgorithm):
         max_grad_norm: float = 0.5,
         device: torch.device = torch.device("cpu"),
         dtype: torch.dtype = torch.float32,
+        is_action_continuous: bool = False,
+        action_scaling: bool = False,
+        action_bound_method: Optional[Literal["clip", "tanh"]] = "clip",
     ) -> None:
         super(ActorCritic, self).__init__()
         self.actor = actor
         self.critic = critic
-        self.gamma = gamma
+        self.gamma = discount_factor
         self.gae_lambda = gae_lambda
         self.entropy_coef = entropy_coef
         self.vf_coef = vf_coef
         self.normalize_advantages = normalize_advantages
-        self.device = device
+        self._device = device
         self.dtype = dtype
         self.learning_rate = learning_rate
         self.max_grad_norm = max_grad_norm
         self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
+        self.is_action_continuous = is_action_continuous
+        self.action_scaling = action_scaling
+        self.action_bound_method = action_bound_method
         self._set_distribution(distribution)
 
     def _set_distribution(self, distribution: Optional[torch.distributions.Distribution]) -> None:
@@ -46,25 +54,57 @@ class ActorCritic(nn.Module, OnPolicyAlgorithm):
         else:
             self.distribution = distribution
 
+    def _action_bound(self, action: torch.Tensor) -> torch.Tensor:
+        with torch.no_grad():
+            if self.action_bound_method == "clip":
+                action = torch.clamp(action, -1.0, 1.0)
+            elif self.action_bound_method == "tanh":
+                action = torch.tanh(action)
+        return action
+
+    def _action_scaling(self, action: torch.Tensor, low: float, high: float) -> torch.Tensor:
+        with torch.no_grad():
+            if self.action_scaling:
+                action = low + (high - low) * (action + 1.0) / 2.0
+        return action
+
     def forward(self, observation: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         value = self.critic(observation)
         latent = self.actor(observation)
-        dist = self.distribution(logits=latent)
-        action = dist.sample()
-        log_prob = dist.log_prob(action.squeeze(-1).long())
+        if isinstance(latent, tuple):
+            dist = self.distribution(*latent)
+        else:
+            dist = self.distribution(logits=latent)
+        action = self._process_continuous_action(dist)
+        log_prob = dist.log_prob(action.squeeze(-1))
         return action, value, log_prob
+
+    def evaluate_observation(self, observation) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        return self.forward(observation)
 
     def get_action(self, observation: torch.Tensor, deterministic: bool = False) -> torch.Tensor:
         latent = self.actor(observation)
-        dist = self.distribution(logits=latent)
-        if deterministic:
-            action = torch.argmax(dist.probs, dim=1)
+        if isinstance(latent, tuple):
+            dist = self.distribution(*latent)
         else:
-            action = dist.sample()
+            dist = self.distribution(logits=latent)
+        action = self._process_continuous_action(dist, deterministic)
         return action
 
-    def estimate_value(self, observation) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        return self.forward(observation)
+    def _process_continuous_action(
+        self, dist: torch.distributions.Distribution, deterministic: bool = False
+    ) -> torch.Tensor:
+        if deterministic:
+            if self.is_action_continuous:
+                action = dist.mean
+            else:
+                action = torch.argmax(dist.probs, dim=1)
+        else:
+            if self.is_action_continuous:
+                action = dist.rsample()
+            else:
+                action = dist.sample()
+        return action
 
     def get_log_prob(self, observation: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
         latent = self.actor(observation)
@@ -79,8 +119,14 @@ class ActorCritic(nn.Module, OnPolicyAlgorithm):
         self, observation: torch.Tensor, action: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         latent = self.actor(observation)
-        dist = self.distribution(logits=latent)
-        log_prob = dist.log_prob(action.squeeze(-1).long())
+        if isinstance(latent, tuple):
+            dist = self.distribution(*latent)
+        else:
+            dist = self.distribution(logits=latent)
+        if self.is_action_continuous:
+            log_prob = dist.log_prob(action)
+        else:
+            log_prob = dist.log_prob(action.squeeze(dim=-1).long())
         value = self.compute_value(observation)
         return value, log_prob.view(-1, 1), dist.entropy().view(-1, 1)
 
@@ -110,3 +156,12 @@ class ActorCritic(nn.Module, OnPolicyAlgorithm):
             "entropy_loss": entropy_loss.item(),
             "loss": loss.item(),
         }
+
+    @property
+    def device(self) -> torch.device:
+        return self._device
+
+    def to(self, device: torch.device) -> None:
+        self._device = device
+        self.actor.to(device)
+        self.critic.to(device)

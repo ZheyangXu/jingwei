@@ -45,8 +45,4 @@ class DataWrapper(object):
         if isinstance(self.action_space, gym.spaces.Discrete):
             return action.item()
         else:
-            return self.to_numpy(action)
-        if isinstance(self.action_space, gym.spaces.Discrete):
-            return action.item()
-        else:
-            return self.to_numpy(action)
+            return np.squeeze(self.to_numpy(action), axis=0)
