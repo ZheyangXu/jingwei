@@ -52,7 +52,7 @@ class OnPolicyTrainer(BaseTrainer):
             num_episodes = 0
             while not done:
                 with torch.no_grad():
-                    action, values, log_probs = self.algo.estimate_value(
+                    action, values, log_probs = self.algo.evaluate_observation(
                         self.wrapper.wrap_observation(observation)
                     )
                 action = self.wrapper.unwrap_action(action)

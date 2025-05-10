@@ -1,3 +1,5 @@
+import dis
+from operator import is_
 from typing import Optional
 
 import torch
@@ -16,7 +18,7 @@ class PPO(ActorCritic):
         learning_rate: float = 0.001,
         distribution: Optional[torch.distributions.Distribution] = None,
         n_epochs: int = 2,
-        gamma: float = 0.99,
+        discount_factor: float = 0.99,
         gae_lambda: float = 0.95,
         entropy_coef: float = 0.0,
         vf_coef: float = 0.5,
@@ -26,13 +28,16 @@ class PPO(ActorCritic):
         max_grad_norm: float = 0.5,
         device: torch.device | str = torch.device("cpu"),
         dtype: torch.dtype = torch.float32,
+        is_action_continuous: bool = False,
+        action_scaling: bool = False,
+        action_bound_method: Optional[str] = "clip",
     ) -> None:
         super(PPO, self).__init__(
             actor,
             critic,
             learning_rate,
             distribution,
-            gamma,
+            discount_factor,
             gae_lambda,
             entropy_coef,
             vf_coef,
@@ -40,6 +45,9 @@ class PPO(ActorCritic):
             max_grad_norm,
             device,
             dtype,
+            is_action_continuous,
+            action_scaling,
+            action_bound_method,
         )
         self.lmbda = lmbda
         self.eps = eps
