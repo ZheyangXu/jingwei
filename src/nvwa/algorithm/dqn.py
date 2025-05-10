@@ -17,6 +17,7 @@ class DQN(nn.Module, OffPolicyAlgorithm):
         actor: nn.Module,
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
+        is_doble_dqn: bool = False,
         learning_rate: float = 1e-3,
         gamma: float = 0.99,
         target_update_step: int = 2,
@@ -31,6 +32,7 @@ class DQN(nn.Module, OffPolicyAlgorithm):
         self.target_actor = deepcopy(actor)
         self.target_actor.eval()
         self.learning_rate = learning_rate
+        self.is_double_dqn = is_doble_dqn
         self.optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
         self._device = device
         self.dtype = dtype
@@ -87,7 +89,15 @@ class DQN(nn.Module, OffPolicyAlgorithm):
 
     def update(self, batch: Batch) -> None:
         q_values = self.get_max_q_values(batch.observation, batch.action)
-        max_next_q_values = self.get_max_q_values(batch.observation_next, actor=self.target_actor)
+        if self.is_double_dqn:
+            next_actions = self.actor(batch.observation_next).argmax(1, keepdim=True)
+            max_next_q_values = self.get_max_q_values(
+                batch.observation_next, action=next_actions, actor=self.target_actor
+            )
+        else:
+            max_next_q_values = self.get_max_q_values(
+                batch.observation_next, actor=self.target_actor
+            )
 
         q_targets = batch.reward + self.gamma * max_next_q_values * (
             1 - torch.logical_or(batch.terminated, batch.truncated).float()
