@@ -18,7 +18,7 @@ class BaseTrainer(ABC):
         device: torch.device | str = torch.get_default_device(),
         dtype: torch.dtype = torch.float32,
         gradient_step: int = 1,
-        eval_episode_count: int = 1,
+        eval_episode_count: int = 10,
     ) -> None:
         super().__init__()
         self.algo = algo

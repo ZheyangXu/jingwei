@@ -2,9 +2,7 @@ import gymnasium as gym
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
 
-from nvwa.actor.q_actor import QActor
 from nvwa.algorithm.dqn import DQN
 from nvwa.trainer import OffPolicyTrainer
 
@@ -23,9 +21,8 @@ class QNet(nn.Module):
 def main():
     env = gym.make("CartPole-v1")
     q_net = QNet(env.observation_space.shape[0], 128, env.action_space.n)
-    optimizer = optim.Adam(q_net.parameters(), lr=0.001)
-    actor = QActor(q_net, optimizer)
-    algo = DQN(actor, env.observation_space, env.action_space)
+
+    algo = DQN(q_net, env.observation_space, env.action_space)
 
     trainer = OffPolicyTrainer(
         algo,
