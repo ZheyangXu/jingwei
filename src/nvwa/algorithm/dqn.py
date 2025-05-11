@@ -17,7 +17,7 @@ class DQN(nn.Module, OffPolicyAlgorithm):
         actor: nn.Module,
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
-        is_doble_dqn: bool = False,
+        is_double_dqn: bool = False,
         learning_rate: float = 1e-3,
         gamma: float = 0.99,
         target_update_step: int = 2,
@@ -32,7 +32,7 @@ class DQN(nn.Module, OffPolicyAlgorithm):
         self.target_actor = deepcopy(actor)
         self.target_actor.eval()
         self.learning_rate = learning_rate
-        self.is_double_dqn = is_doble_dqn
+        self.is_double_dqn = is_double_dqn
         self.optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
         self._device = device
         self.dtype = dtype
