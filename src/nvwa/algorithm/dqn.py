@@ -11,7 +11,7 @@ from nvwa.algorithm.off_policy import OffPolicyAlgorithm
 from nvwa.data.batch import Batch
 
 
-class DQN(nn.Module, OffPolicyAlgorithm):
+class DQN(OffPolicyAlgorithm):
     def __init__(
         self,
         actor: nn.Module,

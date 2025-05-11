@@ -1,3 +1,5 @@
+from typing import Literal, cast
+
 import gymnasium as gym
 import numpy as np
 
@@ -40,3 +42,16 @@ def get_observation_dimension(observation_space: gym.spaces.Space) -> int:
         return 1
     else:
         return len(observation_space.shape)
+
+
+def get_action_type(action_space: gym.Space) -> Literal["discrete", "continuous"]:
+    if isinstance(
+        action_space, gym.spaces.Discrete | gym.spaces.MultiDiscrete | gym.spaces.MultiBinary
+    ):
+        action_type = "discrete"
+    elif isinstance(action_space, gym.spaces.Box):
+        action_type = "continuous"
+    else:
+        raise NotImplementedError(f"{action_space} action space is not supported")
+
+    return cast(Literal["discrete", "continuous"], action_type)

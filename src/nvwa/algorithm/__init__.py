@@ -3,7 +3,8 @@ import nvwa.algorithm.base
 import nvwa.algorithm.dqn
 import nvwa.algorithm.off_policy
 import nvwa.algorithm.on_policy
+import nvwa.algorithm.pg
 import nvwa.algorithm.ppo
 
 
-__all__ = ["base", "dqn", "a2c", "ppo", "off_policy", "on_policy"]
+__all__ = ["base", "dqn", "a2c", "ppo", "off_policy", "on_policy", "pg"]
