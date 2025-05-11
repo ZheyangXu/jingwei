@@ -1,11 +1,9 @@
-from operator import is_
 from typing import Literal, Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from numpy import isin
 
 from nvwa.algorithm.on_policy import OnPolicyAlgorithm
 from nvwa.data.batch import RolloutBatch
