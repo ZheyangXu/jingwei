@@ -9,7 +9,7 @@ from nvwa.algorithm.on_policy import OnPolicyAlgorithm
 from nvwa.data.batch import RolloutBatch
 
 
-class ActorCritic(nn.Module, OnPolicyAlgorithm):
+class ActorCritic(OnPolicyAlgorithm):
     def __init__(
         self,
         actor: nn.Module,

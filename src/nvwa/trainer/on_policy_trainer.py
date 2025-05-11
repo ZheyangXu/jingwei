@@ -81,7 +81,7 @@ class OnPolicyTrainer(BaseTrainer):
                     self.wrapper.wrap_observation(observation)
                 ).item()
             self.buffer.compute_return_and_advantage(
-                num_episodes, next_value, self.algo.gamma, self.algo.gae_lambda
+                num_episodes, next_value, self.algo.discount_factor, self.algo.gae_lambda
             )
             if self.buffer.is_full():
                 break
@@ -94,9 +94,9 @@ class OnPolicyTrainer(BaseTrainer):
             epoch_loss = {"actor_loss": 0, "critic_loss": 0, "loss": 0}
             for step in range(self.gradient_step):
                 for batch in self.buffer.get_batch(self.batch_size):
-                    status = self.algo.update(batch)
-                    epoch_loss["actor_loss"] += status["actor_loss"]
-                    epoch_loss["critic_loss"] += status["critic_loss"]
+                    status = self.algo.learn(batch)
+                    epoch_loss["actor_loss"] += status.get("actor_loss", 0)
+                    epoch_loss["critic_loss"] += status.get("critic_loss", 0)
                     epoch_loss["loss"] += status["loss"]
 
             if epoch % 10 == 0:
