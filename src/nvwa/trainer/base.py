@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import gymnasium as gym
 import torch
 
 from nvwa.algorithm.base import Algorithm
 from nvwa.infra.wrapper import DataWrapper
+from nvwa.trainer.rollout import Rollout
 
 
 class BaseTrainer(ABC):
@@ -18,6 +20,8 @@ class BaseTrainer(ABC):
         device: torch.device | str = torch.get_default_device(),
         dtype: torch.dtype = torch.float32,
         gradient_step: int = 1,
+        n_rollout_step: Optional[int] = None,
+        n_rollout_episodes: int = 1,
         eval_episode_count: int = 10,
     ) -> None:
         super().__init__()
@@ -31,6 +35,15 @@ class BaseTrainer(ABC):
         self.wrapper = DataWrapper(self.env.observation_space, self.env.action_space, dtype, device)
         self.gradient_step = gradient_step
         self.eval_episode_count = eval_episode_count
+        self.rollout = Rollout(
+            algo,
+            env,
+            buffer_size,
+            n_rollout_step=n_rollout_step,
+            n_episodes=n_rollout_episodes,
+            dtype=dtype,
+            device=device,
+        )
         self._init_buffer()
 
     @abstractmethod
