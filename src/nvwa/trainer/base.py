@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Tuple
 
 import gymnasium as gym
 import torch
@@ -50,7 +50,7 @@ class BaseTrainer(ABC):
     def _init_buffer(self) -> None: ...
 
     @abstractmethod
-    def rollout(self) -> int: ...
+    def rollout(self) -> Tuple[int, float]: ...
 
     def evaluate(self) -> float:
         total_reward = 0.0
