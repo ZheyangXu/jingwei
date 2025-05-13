@@ -4,9 +4,8 @@ from typing import Generator, List
 import gymnasium as gym
 import numpy as np
 import torch
-from matplotlib.pylab import f
 
-from nvwa.data.batch import Batch, RolloutBatch
+from nvwa.data.batch import AdvantagesWithReturnsBatch, Batch
 from nvwa.data.transition import RolloutTransition, Transition
 from nvwa.infra.functional import get_action_dimension, get_observation_shape
 from nvwa.infra.wrapper import DataWrapper
@@ -140,8 +139,8 @@ class RolloutBuffer(BaseBuffer):
         self.log_prob[self.pos] = rollout_transition.log_prob
         return self.size()
 
-    def _get_batch(self, batch_indices: List[int]) -> RolloutBatch:
-        return RolloutBatch(
+    def _get_batch(self, batch_indices: List[int]) -> AdvantagesWithReturnsBatch:
+        return AdvantagesWithReturnsBatch(
             observation=self.wrapper.wrap_observation(self.observation[batch_indices]),
             action=self.wrapper.wrap_action(self.action[batch_indices]),
             reward=self.wrapper.to_tensor(self.reward[batch_indices]),
@@ -154,7 +153,7 @@ class RolloutBuffer(BaseBuffer):
             returns=self.wrapper.to_tensor(self.returns[batch_indices]),
         )
 
-    def get_batch(self, batch_size: int) -> Generator[RolloutBatch, None, None]:
+    def get_batch(self, batch_size: int) -> Generator[AdvantagesWithReturnsBatch, None, None]:
         indices = np.random.permutation(self.size())
         start_index = 0
         while start_index < self.size():
