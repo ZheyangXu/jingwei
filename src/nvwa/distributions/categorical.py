@@ -23,7 +23,7 @@ class CategoricalDistribution(Distribution):
         return self.distribution.sample()
 
     def mode(self) -> torch.Tensor:
-        return torch.argmax(self.distribution.probs, dim=1)
+        return torch.argmax(self.distribution.probs, dim=-1)
 
-    def prob(self, action: torch.Tensor) -> torch.Tensor:
-        return self.distribution.probs(action.long())
+    def probs(self) -> torch.Tensor:
+        return self.distribution.probs

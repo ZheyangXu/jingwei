@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from nvwa.algorithm.on_policy import OnPolicyAlgorithm
-from nvwa.data.batch import RolloutBatch
+from nvwa.data.batch import AdvantagesWithReturnsBatch
 
 
 class ActorCritic(OnPolicyAlgorithm):
@@ -128,7 +128,7 @@ class ActorCritic(OnPolicyAlgorithm):
         value = self.compute_value(observation)
         return value, log_prob.view(-1, 1), dist.entropy().view(-1, 1)
 
-    def update(self, batch: RolloutBatch) -> None:
+    def update(self, batch: AdvantagesWithReturnsBatch) -> None:
         values, log_prob, entropy = self.evaluate_action(batch.observation, batch.action)
         advantages = batch.advantages
         returns = batch.returns

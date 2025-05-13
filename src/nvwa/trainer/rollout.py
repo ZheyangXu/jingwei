@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import gymnasium as gym
 import numpy as np
@@ -91,7 +91,18 @@ class Rollout(object):
                     break
         return self.to_batch()
 
-    def to_batch(self) -> RolloutBatch: ...
+    def to_batch(self) -> RolloutBatch:
+        batch = RolloutBatch(
+            observation=self.observation[: self.pos],
+            action=self.action[: self.pos],
+            reward=self.reward[: self.pos],
+            observation_next=self.observation_next[: self.pos],
+            terminated=self.terminated[: self.pos],
+            truncated=self.truncated[: self.pos],
+            episode_index=self.episode_index[: self.pos],
+            episode_end_position=self.episode_end_positions,
+        )
+        return batch
 
     def _should_stop_rollout(self, terminated: bool, truncated: bool, pos: int) -> bool:
         if terminated or truncated:

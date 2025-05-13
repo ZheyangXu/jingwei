@@ -1,5 +1,3 @@
-import dis
-from operator import is_
 from typing import Optional
 
 import torch
@@ -7,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from nvwa.algorithm.a2c import ActorCritic
-from nvwa.data.batch import RolloutBatch
+from nvwa.data.batch import AdvantagesWithReturnsBatch
 
 
 class PPO(ActorCritic):
@@ -53,7 +51,7 @@ class PPO(ActorCritic):
         self.eps = eps
         self.n_epochs = n_epochs
 
-    def update(self, batch: RolloutBatch) -> None:
+    def update(self, batch: AdvantagesWithReturnsBatch) -> None:
         values, log_probs, entropy = self.evaluate_action(batch.observation, batch.action)
         advantages = batch.advantages
         if self.normalize_advantages:

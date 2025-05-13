@@ -1,6 +1,8 @@
 from dataclasses import dataclass
+from typing import List
 
 import torch
+from numpy.typing import NDArray
 
 
 @dataclass(frozen=True)
@@ -25,8 +27,30 @@ class Batch(object):
         return self.observation.device
 
 
-@dataclass(frozen=True)
 class RolloutBatch(Batch):
+    observation: NDArray | torch.Tensor
+    action: NDArray | torch.Tensor
+    reward: NDArray | torch.Tensor
+    observation_next: NDArray | torch.Tensor
+    terminated: NDArray | torch.Tensor
+    truncated: NDArray | torch.Tensor
+    episode_index: NDArray | torch.Tensor
+    episode_end_position: List[int]
+
+    def get_keys(self) -> List[str]:
+        return [
+            "observation",
+            "action",
+            "reward",
+            "observation_next",
+            "terminated",
+            "truncated",
+            "episode_index",
+        ]
+
+
+@dataclass(frozen=True)
+class AdvantagesWithReturnsBatch(Batch):
     log_prob: torch.Tensor
     values: torch.Tensor
     advantages: torch.Tensor
