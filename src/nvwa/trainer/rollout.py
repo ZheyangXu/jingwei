@@ -100,7 +100,7 @@ class Rollout(object):
             terminated=self.terminated[: self.pos],
             truncated=self.truncated[: self.pos],
             episode_index=self.episode_index[: self.pos],
-            episode_end_position=self.episode_end_positions,
+            _episode_end_position=self.episode_end_positions,
         )
         return batch
 
