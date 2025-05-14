@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from nvwa.algorithm.base import Algorithm
-from nvwa.data.batch import AdvantagesWithReturnsBatch
+from nvwa.data.batch import ReturnsBatch, RolloutBatch
 from nvwa.distributions import (
     CategoricalDistribution,
     Distribution,
@@ -84,7 +84,7 @@ class PolicyGradientAlgo(Algorithm):
         log_prob = self.distribution.log_prob(action)
         return action, torch.zeros_like(log_prob), log_prob
 
-    def learn(self, batch: AdvantagesWithReturnsBatch) -> None:
+    def learn(self, batch: ReturnsBatch) -> None:
         self.optimizer.zero_grad()
         loss = -(batch.log_prob * batch.returns).mean()
         loss.requires_grad_(True)
@@ -93,3 +93,20 @@ class PolicyGradientAlgo(Algorithm):
             nn.utils.clip_grad_norm_(self.parameters(), self.max_grad_norm)
         self.optimizer.step()
         return {"loss": loss.item()}
+
+    def process_rollout(self, batch: RolloutBatch) -> ReturnsBatch:
+
+        returns = self.compute_episode_return(
+            batch, gamma=self.discount_factor, gae_lambda=self.gae_lambda
+        )
+        log_prob = self.get_log_prob(batch.observation, batch.action)
+        return ReturnsBatch(
+            observation=batch.observation,
+            action=batch.action,
+            reward=batch.reward,
+            observation_next=batch.observation_next,
+            terminated=batch.terminated,
+            truncated=batch.truncated,
+            returns=returns,
+            log_prob=log_prob,
+        )

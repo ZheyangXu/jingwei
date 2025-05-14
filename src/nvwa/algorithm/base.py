@@ -2,10 +2,12 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
 import gymnasium as gym
+import numpy as np
 import torch
 import torch.nn as nn
+from numpy.typing import NDArray
 
-from nvwa.data.batch import Batch
+from nvwa.data.batch import Batch, RolloutBatch
 from nvwa.infra.functional import get_action_dimension, get_action_type
 
 
@@ -63,3 +65,31 @@ class Algorithm(nn.Module, ABC):
 
     @abstractmethod
     def learn(self, batch: Batch) -> None: ...
+
+    @abstractmethod
+    def process_rollout(self, batch: RolloutBatch) -> Batch: ...
+
+    def compute_episode_return(
+        self,
+        batch: RolloutBatch,
+        values: Optional[NDArray] = None,
+        values_next: Optional[NDArray] = None,
+        gamma: float = 0.99,
+        gae_lambda: float = 0.95,
+    ) -> Tuple[NDArray, NDArray]:
+        if values_next is None:
+            values_next = np.zeros_like(batch.reward, dtype=np.float32)
+        values = np.roll(values_next) if values is None else values
+
+        end_flag = np.logical_or(batch.terminated, batch.truncated)
+        advantages = np.zeros_like(batch.reward)
+        delta = batch.reward + gamma * values_next - values
+        discount = (1.0 - end_flag) * (gamma * gae_lambda)
+        advantage = 0.0
+        for i in range(len(batch.reward) - 1, -1, -1):
+            if i in batch._episode_end_positions:
+                advantage = 0.0
+            advantage = delta[i] + discount[i] * advantage
+            advantages[i] = advantage
+        returns = advantages + values
+        return returns, advantages
