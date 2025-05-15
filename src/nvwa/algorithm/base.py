@@ -93,3 +93,22 @@ class Algorithm(nn.Module, ABC):
             advantages[i] = advantage
         returns = advantages + values
         return returns, advantages
+
+    def compute_nstep_return(
+        self, batch: Batch, gamma: float = 0.99, n_step: int = 1, reward_norm: bool = False
+    ) -> NDArray: ...
+
+    def exploration_noise(self, action: torch.Tensor) -> torch.Tensor:
+        return action
+
+    def process_func(self, batch: Batch, *args: Any, **kwargs: Any) -> Batch:
+        """Pre-process the data from the provided replay buffer.
+
+        Meant to be overridden by subclasses. Typical usage is to add new keys to the
+        batch, e.g., to add the value function of the next state. Used in :meth:`update`,
+        which is usually called repeatedly during training.
+
+        For modifying the replay buffer only once at the beginning
+        (e.g., for offline learning) see :meth:`process_buffer`.
+        """
+        return batch

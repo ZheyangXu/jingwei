@@ -27,24 +27,18 @@ class Batch(object):
     def device(self) -> torch.device | None:
         return self.observation.device if isinstance(self.observation, torch.Tensor) else None
 
+    def keys(self) -> List[str]:
+        return [key for key in self.__dict__.keys() if not key.startswith("_")]
+
+    def set_key(self, key: str, value: torch.Tensor | NDArray) -> None:
+        if not hasattr(self, key) and value is None:
+            raise ValueError(f"Key {key} does not exist in the batch.")
+        setattr(self, key, value)
+
 
 class RolloutBatch(Batch):
     episode_index: NDArray
     _episode_end_position: List[int]
-
-    def keys(self) -> List[str]:
-        return [key for key in self.__dict__.keys() if not key.startswith("_")]
-
-    def get_keys(self) -> List[str]:
-        return [
-            "observation",
-            "action",
-            "reward",
-            "observation_next",
-            "terminated",
-            "truncated",
-            "episode_index",
-        ]
 
 
 @dataclass(frozen=True)

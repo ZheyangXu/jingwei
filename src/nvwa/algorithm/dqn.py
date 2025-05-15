@@ -7,11 +7,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from nvwa.algorithm.off_policy import OffPolicyAlgorithm
+from nvwa.algorithm.base import Algorithm
 from nvwa.data.batch import Batch
 
 
-class DQN(OffPolicyAlgorithm):
+class DQN(Algorithm):
     def __init__(
         self,
         actor: nn.Module,
@@ -64,6 +64,9 @@ class DQN(OffPolicyAlgorithm):
     def get_q_values(self, observation: torch.Tensor) -> torch.Tensor:
         return self.actor(observation)
 
+    def get_target_q_values(self, observation: torch.Tensor) -> torch.Tensor:
+        return self.target_actor(observation)
+
     def get_max_q_values(
         self,
         observation: torch.Tensor,
@@ -76,6 +79,15 @@ class DQN(OffPolicyAlgorithm):
             max_q_values = actor(observation).gather(1, action.long())
         else:
             max_q_values = actor(observation).max(1)[0].view(-1, 1)
+        return max_q_values
+
+    def get_max_target_q_values(
+        self, observation: torch.Tensor, action: torch.Tensor = None
+    ) -> torch.Tensor:
+        if action is not None:
+            max_q_values = self.target_actor(observation).gather(1, action.long())
+        else:
+            max_q_values = self.target_actor(observation).max(1)[0].view(-1, 1)
         return max_q_values
 
     def update_target(self) -> None:
