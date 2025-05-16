@@ -15,6 +15,11 @@ class Batch(object):
     terminated: torch.Tensor | NDArray
     truncated: torch.Tensor | NDArray
 
+    def get(self, key: str) -> torch.Tensor | NDArray:
+        if key not in self.keys():
+            raise ValueError(f"Key {key} does not exist in the batch.")
+        return getattr(self, key)
+
     def observation_dtype(self) -> torch.dtype | np.dtype:
         return self.observation.dtype
 

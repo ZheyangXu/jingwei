@@ -4,6 +4,7 @@ from typing import Generator, List
 import gymnasium as gym
 import numpy as np
 import torch
+from ray import get
 
 from nvwa.data.batch import AdvantagesWithReturnsBatch, Batch
 from nvwa.data.transition import RolloutTransition, Transition
@@ -48,6 +49,14 @@ class BaseBuffer(ABC):
         self.terminated = np.zeros((self.buffer_size, 1), dtype=np.bool_)
         self.truncated = np.zeros((self.buffer_size, 1), dtype=np.bool_)
         return self.size()
+
+    def __getitem__(self, key: str) -> torch.Tensor | np.ndarray:
+        if key not in self.keys():
+            raise ValueError(f"Key {key} does not exist in the buffer.")
+        return getattr(self, key)
+
+    def __setitem__(self, key: str, value: torch.Tensor | np.ndarray) -> None:
+        setattr(self, key, value)
 
     def size(self) -> int:
         if self.full:
