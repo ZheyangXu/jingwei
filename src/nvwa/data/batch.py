@@ -41,6 +41,7 @@ class Batch(object):
         setattr(self, key, value)
 
 
+@dataclass(frozen=True)
 class RolloutBatch(Batch):
     episode_index: NDArray
     _episode_end_position: List[int]

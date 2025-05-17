@@ -4,7 +4,6 @@ from typing import Generator, List
 import gymnasium as gym
 import numpy as np
 import torch
-from ray import get
 
 from nvwa.data.batch import AdvantagesWithReturnsBatch, Batch
 from nvwa.data.transition import RolloutTransition, Transition
@@ -74,6 +73,20 @@ class BaseBuffer(ABC):
         self.terminated[self.pos] = transition.terminated
         self.truncated[self.pos] = transition.truncated
         self.pos += 1
+        if self.pos >= self.buffer_size:
+            self.full = True
+            self.pos = 0
+        return self.size()
+
+    def add(self, batch: Batch) -> int:
+        end_position = self.pos + len(batch)
+        for key in batch.keys():
+            if not hasattr(self, key):
+                setattr(self, key, np.zeros((self.buffer_size, 1), dtype=batch.get(key).dtype))
+            data = getattr(self, key)
+            data[self.pos : end_position] = batch.get(key)
+            setattr(self, key, data)
+        self.pos = end_position
         if self.pos >= self.buffer_size:
             self.full = True
             self.pos = 0

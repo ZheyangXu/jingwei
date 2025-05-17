@@ -1,9 +1,9 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 import gymnasium as gym
 import torch
 
-from nvwa.algorithm.on_policy import OnPolicyAlgorithm
+from nvwa.algorithm.base import Algorithm
 from nvwa.data.buffer import RolloutBuffer
 from nvwa.trainer.base import BaseTrainer
 
@@ -11,7 +11,7 @@ from nvwa.trainer.base import BaseTrainer
 class OnPolicyTrainer(BaseTrainer):
     def __init__(
         self,
-        algo: OnPolicyAlgorithm,
+        algo: Algorithm,
         env: gym.Env,
         buffer_size: int = 10000,
         max_epochs: int = 200,
@@ -19,6 +19,7 @@ class OnPolicyTrainer(BaseTrainer):
         device: torch.device | str = torch.device("cpu"),
         dtype: torch.dtype = torch.float32,
         gradient_step: int = 2,
+        n_rollout_step: Optional[int] = None,
         eval_episode_count: int = 10,
         n_episodes: int = 10,
     ) -> None:
@@ -31,7 +32,7 @@ class OnPolicyTrainer(BaseTrainer):
             device,
             dtype,
             gradient_step,
-            eval_episode_count,
+            n_rollout_step,
         )
         self.n_episodes = n_episodes
 
@@ -44,13 +45,13 @@ class OnPolicyTrainer(BaseTrainer):
         )
 
     def rollout(self) -> Tuple[int, float]:
-        self.rollout.reset()
-        rollout_batch = self.rollout.rollout()
+        self.rolloutor.reset()
+        rollout_batch = self.rolloutor.rollout()
         enriched_rollout_batch = self.algo.process_rollout(rollout_batch)
         self.buffer.reset()
         self.buffer.add(enriched_rollout_batch)
 
-        return self.buffer.size(), rollout_batch.reward.sum() / self.n_episodes
+        return self.buffer.size(), rollout_batch.reward.sum()
 
     def train(self) -> None:
         for epoch in range(self.max_epochs):
