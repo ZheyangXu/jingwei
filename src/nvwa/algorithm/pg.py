@@ -86,9 +86,8 @@ class PolicyGradientAlgo(Algorithm):
 
     def learn(self, batch: ReturnsBatch) -> None:
         self.optimizer.zero_grad()
-        for key in batch.keys():
-            batch.get(key).requires_grad = True
         loss = -(batch.log_prob * batch.returns).mean()
+        loss.requires_grad_(True)
         loss.backward()
         if self.max_grad_norm > 0:
             nn.utils.clip_grad_norm_(self.parameters(), self.max_grad_norm)
