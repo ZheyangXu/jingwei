@@ -35,13 +35,12 @@ class BaseTrainer(ABC):
         self.wrapper = DataWrapper(self.env.observation_space, self.env.action_space, dtype, device)
         self.gradient_step = gradient_step
         self.eval_episode_count = eval_episode_count
-        self.rollout = Rollout(
+        self.rolloutor = Rollout(
             algo,
             env,
             buffer_size,
             n_rollout_step=n_rollout_step,
             n_episodes=n_rollout_episodes,
-            dtype=dtype,
             device=device,
         )
         self._init_buffer()

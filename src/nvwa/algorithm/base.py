@@ -9,6 +9,7 @@ from numpy.typing import NDArray
 
 from nvwa.data.batch import Batch, RolloutBatch
 from nvwa.infra.functional import get_action_dimension, get_action_type
+from nvwa.infra.wrapper import DataWrapper
 
 
 class Algorithm(nn.Module, ABC):
@@ -21,6 +22,8 @@ class Algorithm(nn.Module, ABC):
         observation_space: Optional[gym.Space] = None,
         is_action_scaling: bool = False,
         action_bound_method: Optional[str] = "clip",
+        dtype: torch.dtype = torch.float32,
+        device: torch.device | str = torch.device("cpu"),
     ) -> None:
         super().__init__()
         self.observation_space = observation_space
@@ -30,6 +33,9 @@ class Algorithm(nn.Module, ABC):
         self.action_bound_method = action_bound_method
         self.action_type = get_action_type(action_space)
         self.discount_factor = discount_factor
+        self.dtype = dtype
+        self.device = device
+        self.wrapper = DataWrapper(observation_space, action_space, dtype, device)
 
     @abstractmethod
     def forward(
@@ -79,7 +85,7 @@ class Algorithm(nn.Module, ABC):
     ) -> Tuple[NDArray, NDArray]:
         if values_next is None:
             values_next = np.zeros_like(batch.reward, dtype=np.float32)
-        values = np.roll(values_next) if values is None else values
+        values = np.roll(values_next, 1) if values is None else values
 
         end_flag = np.logical_or(batch.terminated, batch.truncated)
         advantages = np.zeros_like(batch.reward)
@@ -87,7 +93,7 @@ class Algorithm(nn.Module, ABC):
         discount = (1.0 - end_flag) * (gamma * gae_lambda)
         advantage = 0.0
         for i in range(len(batch.reward) - 1, -1, -1):
-            if i in batch._episode_end_positions:
+            if i in batch._episode_end_position:
                 advantage = 0.0
             advantage = delta[i] + discount[i] * advantage
             advantages[i] = advantage

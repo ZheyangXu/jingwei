@@ -62,7 +62,7 @@ class PolicyGradientAlgo(Algorithm):
     def forward(self, observation: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         return self.actor(observation)
 
-    def get_action(self, observation: torch.Tensor, deterministic: bool = False) -> torch.Tensor:
+    def get_action(self, observation: torch.Tensor, deterministic: bool = True) -> torch.Tensor:
         latent = self.actor(observation)
         self.distribution.prob_distribution(latent)
         return self.distribution.get_action(deterministic)
@@ -95,11 +95,14 @@ class PolicyGradientAlgo(Algorithm):
         return {"loss": loss.item()}
 
     def process_rollout(self, batch: RolloutBatch) -> ReturnsBatch:
-
-        returns = self.compute_episode_return(
+        returns, _ = self.compute_episode_return(
             batch, gamma=self.discount_factor, gae_lambda=self.gae_lambda
         )
-        log_prob = self.get_log_prob(batch.observation, batch.action)
+        with torch.no_grad():
+            log_prob = self.get_log_prob(
+                self.wrapper.wrap_observation(batch.observation),
+                self.wrapper.wrap_action(batch.action),
+            ).unsqueeze(-1)
         return ReturnsBatch(
             observation=batch.observation,
             action=batch.action,
@@ -108,5 +111,5 @@ class PolicyGradientAlgo(Algorithm):
             terminated=batch.terminated,
             truncated=batch.truncated,
             returns=returns,
-            log_prob=log_prob,
+            log_prob=self.wrapper.to_numpy(log_prob),
         )

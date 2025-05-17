@@ -35,7 +35,10 @@ class Rollout(object):
         self.reset()
         self.device = device
         self.wrapper = DataWrapper(
-            self.env.observation_space, self.env.action_space, self.dtype, self.device
+            self.env.observation_space, self.env.action_space, torch.float32, self.device
+        )
+        print(
+            f"Rollout initialized with max_size: {self.max_size}, n_rollout_step: {self.n_rollout_step}"
         )
 
     def data_keys(self) -> List[str]:
@@ -57,11 +60,14 @@ class Rollout(object):
 
     def reset(self) -> None:
         self.observation = np.zeros((self.max_size, *self.observation_shape), dtype=self.dtype)
-        self.action = np.zeros((self.max_size, self.action_dimension), dtype=self.action_dtype)
-        self.reward = np.zeros((self.max_size,), dtype=np.float32)
+        if isinstance(self.action_space, gym.spaces.Discrete):
+            self.action = np.zeros((self.max_size, 1), dtype=self.action_dtype)
+        else:
+            self.action = np.zeros((self.max_size, self.action_dimension), dtype=self.action_dtype)
+        self.reward = np.zeros((self.max_size, 1), dtype=np.float32)
         self.observation_next = np.zeros_like(self.observation)
-        self.terminated = np.zeros((self.max_size,), dtype=np.bool_)
-        self.truncated = np.zeros((self.max_size,), dtype=np.bool_)
+        self.terminated = np.zeros((self.max_size, 1), dtype=np.bool_)
+        self.truncated = np.zeros((self.max_size, 1), dtype=np.bool_)
         self.episode_index = np.zeros((self.max_size,), dtype=np.int64)
         self.episode_end_positions = []
         self.pos = 0
@@ -73,7 +79,7 @@ class Rollout(object):
             observation, _ = self.env.reset()
             while True:
                 with torch.no_grad():
-                    action = self.algo.get_action(self.wrapper.wrap_observation(observation))
+                    action = self.algo.get_action(self.wrapper.wrap_observation(observation), True)
                 action = self.wrapper.unwrap_action(action)
                 observation_next, reward, terminated, truncated, info = self.env.step(action)
                 total_reward += reward

@@ -14,7 +14,7 @@ class CategoricalDistribution(Distribution):
         self.distribution = torch.distributions.Categorical(logits=logits)
 
     def log_prob(self, action: torch.Tensor) -> torch.Tensor:
-        return self.distribution.log_prob(action.long())
+        return self.distribution.log_prob(action.squeeze().long())
 
     def entropy(self) -> torch.Tensor:
         return self.distribution.entropy()
