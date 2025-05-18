@@ -65,7 +65,7 @@ class OffPolicyTrainer(BaseTrainer):
             epoch_loss = 0.0
             for step in range(self.gradient_step):
                 batch = self.buffer.sample(self.batch_size)
-                status = self.algo.update(batch)
+                status = self.algo.learn(batch)
                 epoch_loss += status["loss"]
 
             if epoch % 10 == 0:
