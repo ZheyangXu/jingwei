@@ -54,7 +54,7 @@ def main():
     trainer.train()
 
     double_q_net = QNet(env.observation_space.shape[0], 128, env.action_space.n)
-    double_dqn = DQN(double_q_net, env.observation_space, env.action_space, is_doble_dqn=True)
+    double_dqn = DQN(double_q_net, env.observation_space, env.action_space, is_double_dqn=True)
     trainer = OffPolicyTrainer(
         double_dqn,
         env,

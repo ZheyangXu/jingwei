@@ -6,6 +6,7 @@ import gymnasium as gym
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchviz import make_dot
 
 from nvwa.algorithm.base import Algorithm
 from nvwa.data.batch import Batch
@@ -27,18 +28,21 @@ class DQN(Algorithm):
         device: torch.device | str = torch.device("cpu"),
         dtype: torch.dtype = torch.float32,
     ) -> None:
-        super(DQN, self).__init__()
+        super().__init__(
+            action_space=action_space,
+            observation_space=observation_space,
+            discount_factor=gamma,
+            is_action_scaling=False,
+            dtype=dtype,
+            device=device,
+        )
         self.actor = actor
         self.target_actor = deepcopy(actor)
         self.target_actor.eval()
         self.learning_rate = learning_rate
         self.is_double_dqn = is_double_dqn
         self.optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
-        self._device = device
-        self.dtype = dtype
         self.epsilon = epsilon
-        self.observation_space = observation_space
-        self.action_space = action_space
         self.target_update_step = target_update_step
         self.gamma = gamma
         self.tau = tau
@@ -99,7 +103,7 @@ class DQN(Algorithm):
             + self.tau * (self.actor.state_dict() - self.target_actor.state_dict())
         )
 
-    def update(self, batch: Batch) -> None:
+    def learn(self, batch: Batch) -> None:
         q_values = self.get_max_q_values(batch.observation, batch.action)
         if self.is_double_dqn:
             next_actions = self.actor(batch.observation_next).argmax(1, keepdim=True)
@@ -140,12 +144,11 @@ class DQN(Algorithm):
     def is_offline(self) -> bool:
         return False
 
-    @property
-    def device(self) -> torch.device:
-        return self._device
-
     def to(self, device: Optional[torch.device] = None) -> None:
         device = device or self._device
         self.actor.to(device)
         self.target_actor.to(device)
         self._device = device
+
+    def process_rollout(self, batch: Batch) -> Batch:
+        return batch
