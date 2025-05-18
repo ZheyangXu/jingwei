@@ -50,12 +50,17 @@ class RolloutBatch(Batch):
 @dataclass(frozen=True)
 class ReturnsBatch(Batch):
     returns: torch.Tensor | NDArray
-    log_prob: torch.Tensor | NDArray
 
 
 @dataclass(frozen=True)
-class AdvantagesWithReturnsBatch(Batch):
-    log_prob: torch.Tensor | NDArray
-    values: torch.Tensor | NDArray
-    advantages: torch.Tensor | NDArray
+class OldLogProbBatch(Batch):
     returns: torch.Tensor | NDArray
+    advantage: torch.Tensor | NDArray
+    old_log_prob: torch.Tensor | NDArray
+
+
+@dataclass(frozen=True)
+class AdvantageBatch(Batch):
+    advantage: torch.Tensor | NDArray
+    returns: torch.Tensor | NDArray
+    old_log_prob: torch.Tensor | NDArray

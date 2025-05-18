@@ -77,9 +77,14 @@ class Rollout(object):
         total_reward = 0.0
         for episode in range(self.n_episodes):
             observation, _ = self.env.reset()
+            terminated = False
+            truncated = False
             while True:
-                with torch.no_grad():
-                    action = self.algo.get_action(self.wrapper.wrap_observation(observation), True)
+                if self._should_stop_rollout(terminated, truncated, self.pos):
+                    self.episode_end_positions.append(self.pos)
+                    break
+                action = self.algo.get_action(self.wrapper.wrap_observation(observation), False)
+
                 action = self.wrapper.unwrap_action(action)
                 observation_next, reward, terminated, truncated, info = self.env.step(action)
                 total_reward += reward
@@ -92,9 +97,7 @@ class Rollout(object):
                 self.episode_index[self.pos] = episode
                 self.pos += 1
                 observation = observation_next
-                if self._should_stop_rollout(terminated, truncated, self.pos):
-                    self.episode_end_positions.append(self.pos)
-                    break
+
         return self.to_batch()
 
     def to_batch(self) -> RolloutBatch:
@@ -114,5 +117,7 @@ class Rollout(object):
         if terminated or truncated:
             return True
         if self.n_rollout_step is not None and pos >= self.n_rollout_step:
+            return True
+        if pos >= self.max_size:
             return True
         return False

@@ -1,6 +1,6 @@
 import torch
 
-from nvwa.data.batch import AdvantagesWithReturnsBatch, Batch
+from nvwa.data.batch import AdvantageBatch, Batch
 
 
 dtype = torch.float32
@@ -47,7 +47,7 @@ def test_rollout_batch() -> None:
     advantages = torch.randn(4, dtype=dtype, device=device)
     returns = torch.randn(4, dtype=dtype, device=device)
 
-    rollout_batch = AdvantagesWithReturnsBatch(
+    rollout_batch = AdvantageBatch(
         observation=observation,
         action=action,
         reward=reward,
