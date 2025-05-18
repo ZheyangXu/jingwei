@@ -5,7 +5,6 @@ import gymnasium as gym
 import numpy as np
 import torch
 import torch.nn as nn
-from matplotlib.pylab import f
 from numpy.typing import NDArray
 
 from nvwa.data.batch import Batch, RolloutBatch
@@ -107,15 +106,3 @@ class Algorithm(nn.Module, ABC):
 
     def exploration_noise(self, action: torch.Tensor) -> torch.Tensor:
         return action
-
-    def process_func(self, batch: Batch, *args: Any, **kwargs: Any) -> Batch:
-        """Pre-process the data from the provided replay buffer.
-
-        Meant to be overridden by subclasses. Typical usage is to add new keys to the
-        batch, e.g., to add the value function of the next state. Used in :meth:`update`,
-        which is usually called repeatedly during training.
-
-        For modifying the replay buffer only once at the beginning
-        (e.g., for offline learning) see :meth:`process_buffer`.
-        """
-        return batch
