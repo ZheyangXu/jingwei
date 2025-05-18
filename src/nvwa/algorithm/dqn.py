@@ -6,7 +6,6 @@ import gymnasium as gym
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchviz import make_dot
 
 from nvwa.algorithm.base import Algorithm
 from nvwa.data.batch import Batch

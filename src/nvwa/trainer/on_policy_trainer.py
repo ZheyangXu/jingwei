@@ -20,8 +20,7 @@ class OnPolicyTrainer(BaseTrainer):
         dtype: torch.dtype = torch.float32,
         gradient_step: int = 2,
         n_rollout_step: Optional[int] = None,
-        eval_episode_count: int = 10,
-        n_episodes: int = 10,
+        n_episodes: int = 100,
     ) -> None:
         super().__init__(
             algo,
@@ -33,6 +32,7 @@ class OnPolicyTrainer(BaseTrainer):
             dtype,
             gradient_step,
             n_rollout_step,
+            n_episodes,
         )
         self.n_episodes = n_episodes
 
@@ -51,7 +51,7 @@ class OnPolicyTrainer(BaseTrainer):
         self.buffer.reset()
         self.buffer.add(enriched_rollout_batch)
 
-        return self.buffer.size(), rollout_batch.reward.sum()
+        return self.buffer.size(), rollout_batch.reward.sum() / self.n_episodes
 
     def train(self) -> None:
         for epoch in range(self.max_epochs):

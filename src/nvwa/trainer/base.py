@@ -19,9 +19,9 @@ class BaseTrainer(ABC):
         batch_size: int = 32,
         device: torch.device | str = torch.get_default_device(),
         dtype: torch.dtype = torch.float32,
-        gradient_step: int = 1,
+        gradient_step: int = 5,
         n_rollout_step: Optional[int] = None,
-        n_rollout_episodes: int = 1,
+        n_rollout_episodes: int = 10,
         eval_episode_count: int = 10,
     ) -> None:
         super().__init__()

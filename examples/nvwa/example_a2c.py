@@ -50,7 +50,7 @@ def main():
     policy_net = PolicyNet(env.observation_space.shape[0], 128, env.action_space.n)
     value_net = ValueNet(env.observation_space.shape[0], 128)
 
-    algo = ActorCritic(policy_net, value_net, 0.001)
+    algo = ActorCritic(policy_net, value_net, env.action_space, env.observation_space, 0.001)
 
     trainer = OnPolicyTrainer(
         algo,
@@ -68,9 +68,7 @@ def main():
     env = gym.make("Pendulum-v1")
     policy_net = PolicyContinuousNet(env.observation_space.shape[0], 128, env.action_space.shape[0])
     value_net = ValueNet(env.observation_space.shape[0], 128)
-    algo = ActorCritic(
-        policy_net, value_net, distribution=torch.distributions.Normal, is_action_continuous=True
-    )
+    algo = ActorCritic(policy_net, value_net, env.action_space, env.observation_space)
     trainer = OnPolicyTrainer(
         algo,
         env,

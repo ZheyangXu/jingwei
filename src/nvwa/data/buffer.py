@@ -5,7 +5,7 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from nvwa.data.batch import AdvantagesWithReturnsBatch, Batch
+from nvwa.data.batch import AdvantageBatch, Batch
 from nvwa.data.transition import RolloutTransition, Transition
 from nvwa.infra.functional import get_action_dimension, get_observation_shape
 from nvwa.infra.wrapper import DataWrapper
@@ -30,6 +30,14 @@ class BaseBuffer(ABC):
         self.dtype = dtype
         self.wrapper = DataWrapper(observation_space, action_space, dtype, device)
         self._init_buffer()
+        self.__keys = [
+            "observation",
+            "action",
+            "reward",
+            "observation_next",
+            "terminated",
+            "truncated",
+        ]
 
     def _init_buffer(self) -> int:
         self.pos = 0
@@ -50,11 +58,13 @@ class BaseBuffer(ABC):
         return self.size()
 
     def __getitem__(self, key: str) -> torch.Tensor | np.ndarray:
-        if key not in self.keys():
+        if key not in self.__keys:
             raise ValueError(f"Key {key} does not exist in the buffer.")
         return getattr(self, key)
 
     def __setitem__(self, key: str, value: torch.Tensor | np.ndarray) -> None:
+        if key not in self.__keys:
+            self.__keys.append(key)
         setattr(self, key, value)
 
     def size(self) -> int:
@@ -150,7 +160,7 @@ class RolloutBuffer(BaseBuffer):
     def _init_buffer(self) -> int:
         super()._init_buffer()
         self.value = np.zeros((self.buffer_size, 1), dtype=np.float32)
-        self.log_prob = np.zeros((self.buffer_size, 1), dtype=np.float32)
+        self.old_log_prob = np.zeros((self.buffer_size, 1), dtype=np.float32)
         self.advantages = np.zeros((self.buffer_size, 1), dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, 1), dtype=np.float32)
         return self.size()
@@ -161,21 +171,20 @@ class RolloutBuffer(BaseBuffer):
         self.log_prob[self.pos] = rollout_transition.log_prob
         return self.size()
 
-    def _get_batch(self, batch_indices: List[int]) -> AdvantagesWithReturnsBatch:
-        return AdvantagesWithReturnsBatch(
+    def _get_batch(self, batch_indices: List[int]) -> AdvantageBatch:
+        return AdvantageBatch(
             observation=self.wrapper.wrap_observation(self.observation[batch_indices]),
             action=self.wrapper.wrap_action(self.action[batch_indices]),
             reward=self.wrapper.to_tensor(self.reward[batch_indices]),
             observation_next=self.wrapper.wrap_observation(self.observation_next[batch_indices]),
             terminated=self.wrapper.to_tensor(self.terminated[batch_indices]),
             truncated=self.wrapper.to_tensor(self.truncated[batch_indices]),
-            log_prob=self.wrapper.to_tensor(self.log_prob[batch_indices]),
-            values=self.wrapper.to_tensor(self.value[batch_indices]),
-            advantages=self.wrapper.to_tensor(self.advantages[batch_indices]),
+            advantage=self.wrapper.to_tensor(self.advantage[batch_indices]),
             returns=self.wrapper.to_tensor(self.returns[batch_indices]),
+            old_log_prob=self.wrapper.to_tensor(self.old_log_prob[batch_indices]),
         )
 
-    def get_batch(self, batch_size: int) -> Generator[AdvantagesWithReturnsBatch, None, None]:
+    def get_batch(self, batch_size: int) -> Generator[AdvantageBatch, None, None]:
         indices = np.random.permutation(self.size())
         start_index = 0
         while start_index < self.size():
