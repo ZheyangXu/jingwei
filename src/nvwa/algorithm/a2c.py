@@ -155,7 +155,7 @@ class ActorCritic(Algorithm):
             observation_next=batch.observation_next,
             terminated=batch.terminated,
             truncated=batch.truncated,
-            advantages=advantages,
+            advantage=advantages,
             returns=returns,
             old_log_prob=None,
         )
