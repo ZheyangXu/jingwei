@@ -15,8 +15,8 @@ class DQN(Algorithm):
     def __init__(
         self,
         actor: nn.Module,
-        observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
+        observation_space: gym.spaces.Space,
         is_double_dqn: bool = False,
         learning_rate: float = 1e-3,
         gamma: float = 0.99,
