@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from nvwa.algorithm.base import Algorithm
+from nvwa.agent.base import Algorithm
 from nvwa.data.batch import AdvantageBatch, RolloutBatch
 from nvwa.distributions import (
     CategoricalDistribution,

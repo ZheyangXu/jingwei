@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from nvwa.algorithm.base import Algorithm
+from nvwa.agent.base import Algorithm
 from nvwa.data.batch import Batch
 
 

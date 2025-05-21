@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 import gymnasium as gym
 import torch
 
-from nvwa.algorithm.base import Algorithm
+from nvwa.agent.base import Algorithm
 from nvwa.data.buffer import RolloutBuffer
 from nvwa.trainer.base import BaseTrainer
 

@@ -4,7 +4,7 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from nvwa.algorithm.base import Algorithm
+from nvwa.agent.base import Algorithm
 from nvwa.data.batch import RolloutBatch
 from nvwa.infra.functional import get_action_dimension, get_observation_shape
 from nvwa.infra.wrapper import DataWrapper

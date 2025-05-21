@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 import torch
 
-from nvwa.algorithm.base import Algorithm
+from nvwa.agent.base import Algorithm
 
 
 class OffPolicyAlgorithm(Algorithm, ABC):

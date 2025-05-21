@@ -1,4 +1,4 @@
-import nvwa.algorithm
+import nvwa.agent
 import nvwa.data
 import nvwa.distributions
 import nvwa.infra
