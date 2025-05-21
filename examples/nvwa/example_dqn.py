@@ -38,7 +38,7 @@ def main():
     env = gym.make("CartPole-v1")
     q_net = QNet(env.observation_space.shape[0], 128, env.action_space.n)
 
-    dqn = DQN(q_net, env.observation_space, env.action_space)
+    dqn = DQN(q_net, env.action_space, env.observation_space)
 
     trainer = OffPolicyTrainer(
         dqn,
@@ -54,7 +54,7 @@ def main():
     trainer.train()
 
     double_q_net = QNet(env.observation_space.shape[0], 128, env.action_space.n)
-    double_dqn = DQN(double_q_net, env.observation_space, env.action_space, is_double_dqn=True)
+    double_dqn = DQN(double_q_net, env.action_space, env.observation_space, is_double_dqn=True)
     trainer = OffPolicyTrainer(
         double_dqn,
         env,
@@ -69,7 +69,7 @@ def main():
     trainer.train()
 
     q_value_action_net = QValueActionNet(env.observation_space.shape[0], 128, env.action_space.n)
-    dueling_dqn = DQN(q_value_action_net, env.observation_space, env.action_space)
+    dueling_dqn = DQN(q_value_action_net, env.action_space, env.observation_space)
     trainer = OffPolicyTrainer(
         dueling_dqn,
         env,
