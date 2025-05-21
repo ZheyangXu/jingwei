@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from nvwa.algorithm.pg import PolicyGradientAlgo
+from nvwa.agent.pg import PolicyGradientAlgo
 from nvwa.trainer import OnPolicyTrainer
 
 

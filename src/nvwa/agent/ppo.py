@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from nvwa.algorithm.a2c import ActorCritic
+from nvwa.agent.a2c import ActorCritic
 from nvwa.data.batch import OldLogProbBatch, RolloutBatch
 from nvwa.distributions import Distribution
 

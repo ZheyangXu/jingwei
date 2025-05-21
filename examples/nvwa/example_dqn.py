@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from nvwa.algorithm.dqn import DQN
+from nvwa.agent.dqn import DQN
 from nvwa.trainer import OffPolicyTrainer
 
 

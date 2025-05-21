@@ -3,7 +3,7 @@ from typing import Tuple
 
 import torch
 
-from nvwa.algorithm.base import Algorithm
+from nvwa.agent.base import Algorithm
 
 
 class OnPolicyAlgorithm(Algorithm, ABC):

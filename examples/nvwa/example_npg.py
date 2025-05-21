@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from nvwa.algorithm.npg import NPG
+from nvwa.agent.npg import NPG
 from nvwa.trainer import OnPolicyTrainer
 
 
