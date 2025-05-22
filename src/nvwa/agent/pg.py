@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from nvwa.agent.base import Algorithm
+from nvwa.agent.base import BaseAgent
 from nvwa.data.batch import ReturnsBatch, RolloutBatch
 from nvwa.distributions import (
     CategoricalDistribution,
@@ -14,7 +14,7 @@ from nvwa.distributions import (
 )
 
 
-class PolicyGradientAlgo(Algorithm):
+class PolicyGradientAlgo(BaseAgent):
     def __init__(
         self,
         actor: nn.Module,

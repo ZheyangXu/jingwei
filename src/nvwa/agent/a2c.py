@@ -6,8 +6,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from nvwa.agent.base import Algorithm
+from nvwa.agent.base import BaseAgent
 from nvwa.data.batch import AdvantageBatch, RolloutBatch
+from nvwa.data.buffer import RolloutBuffer
 from nvwa.distributions import (
     CategoricalDistribution,
     Distribution,
@@ -15,7 +16,7 @@ from nvwa.distributions import (
 )
 
 
-class ActorCritic(Algorithm):
+class ActorCritic(BaseAgent):
     def __init__(
         self,
         actor: nn.Module,
@@ -28,6 +29,8 @@ class ActorCritic(Algorithm):
         gae_lambda: float = 0.95,
         entropy_coef: float = 0.0,
         vf_coef: float = 0.5,
+        max_gradient_step: int = 1,
+        batch_size: int = 256,
         normalize_advantages: bool = False,
         max_grad_norm: float = 0.5,
         device: torch.device = torch.device("cpu"),
@@ -59,6 +62,8 @@ class ActorCritic(Algorithm):
         self.is_action_continuous = is_action_continuous
         self.action_bound_method = action_bound_method
         self._set_distribution(distribution)
+        self.max_gradient_step = max_gradient_step
+        self.batch_size = batch_size
 
     def _set_distribution(self, distribution: Optional[torch.distributions.Distribution]) -> None:
         if distribution is None:
@@ -116,32 +121,35 @@ class ActorCritic(Algorithm):
         value = self.compute_value(observation)
         return value, log_prob.view(-1, 1), entropy.view(-1, 1)
 
-    def learn(self, batch: AdvantageBatch) -> None:
-        values, log_prob, entropy = self.evaluate_action(batch.observation, batch.action)
-        advantages = batch.advantage
-        returns = batch.returns
-        if self.normalize_advantages:
-            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
-            returns = (returns - returns.mean()) / (returns.std() + 1e-8)
+    def learn(self, buffer: RolloutBuffer) -> None:
+        epoch_loss = {"actor_loss": 0, "critic_loss": 0, "loss": 0}
+        for step in range(self.max_gradient_step):
+            for batch in buffer.get_batch(self.batch_size):
+                values, log_prob, entropy = self.evaluate_action(batch.observation, batch.action)
+                advantages = batch.advantage
+                returns = batch.returns
+                if self.normalize_advantages:
+                    advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+                    returns = (returns - returns.mean()) / (returns.std() + 1e-8)
 
-        policy_loss = -(log_prob * advantages).mean()
-        value_loss = F.mse_loss(returns, values).mean()
+                policy_loss = -(log_prob * advantages).mean()
+                value_loss = F.mse_loss(returns, values).mean()
 
-        entropy_loss = -torch.mean(entropy) if entropy is not None else -torch.mean(-log_prob)
+                entropy_loss = (
+                    -torch.mean(entropy) if entropy is not None else -torch.mean(-log_prob)
+                )
 
-        loss = policy_loss + self.vf_coef * value_loss - self.entropy_coef * entropy_loss
-        self.optimizer.zero_grad()
-        if self.max_grad_norm > 0:
-            nn.utils.clip_grad_norm_(self.parameters(), self.max_grad_norm)
-        loss.backward()
-        self.optimizer.step()
+                loss = policy_loss + self.vf_coef * value_loss - self.entropy_coef * entropy_loss
+                self.optimizer.zero_grad()
+                if self.max_grad_norm > 0:
+                    nn.utils.clip_grad_norm_(self.parameters(), self.max_grad_norm)
+                loss.backward()
+                self.optimizer.step()
+                epoch_loss["actor_loss"] += policy_loss.item()
+                epoch_loss["critic_loss"] += value_loss.item()
+                epoch_loss["loss"] += loss.item()
 
-        return {
-            "actor_loss": policy_loss.item(),
-            "critic_loss": value_loss.item(),
-            "entropy_loss": entropy_loss.item(),
-            "loss": loss.item(),
-        }
+        return epoch_loss
 
     def process_rollout(self, batch: RolloutBatch) -> AdvantageBatch:
         returns, advantages = self.compute_episode_return(
