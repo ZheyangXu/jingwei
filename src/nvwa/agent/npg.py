@@ -157,7 +157,7 @@ class NPG(ActorCritic):
             self._set_from_flat_params(self.actor, new_flat_params)
             new_logits = self.actor(batch.observation)
             self.distribution.prob_distribution(new_logits)
-            new_dist = self.distribution.distribution
+            # new_dist = self.distribution.distribution
 
         total_value_loss = 0.0
         for _ in range(self.optimizing_critic_iters):

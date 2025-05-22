@@ -1,5 +1,4 @@
 import copy
-import re
 from typing import Dict, Optional
 
 import gymnasium as gym
@@ -147,7 +146,7 @@ class TRPO(NPG):
         td_delta = td_target - self.compute_value(batch.observation)
         self.distribution.prob_distribution(self.actor(batch.observation))
         old_dist = self.distribution.distribution
-        critic_loss = torch.mean(F.mse_loss(td_target, self.compute_value(batch.observation)))
+        critic_loss = torch.mean(F.mse_loss(td_delta, self.compute_value(batch.observation)))
         self.optimizer.zero_grad()
         critic_loss.backward()
         self.optimizer.step()
