@@ -26,7 +26,7 @@ class PPO(ActorCritic):
         entropy_coef: float = 0.0,
         vf_coef: float = 0.5,
         normalize_advantages: bool = False,
-        max_gradient_step: int = 1,
+        max_gradient_step: int = 5,
         batch_size: int = 256,
         lmbda: float = 0.9,
         eps: float = 0.2,
@@ -64,7 +64,7 @@ class PPO(ActorCritic):
 
     def learn(self, buffer: RolloutBuffer) -> None:
         epoch_loss = {"actor_loss": 0, "critic_loss": 0, "loss": 0}
-        for step in range(self.max_gradient_step):
+        for _ in range(self.max_gradient_step):
             for batch in buffer.get_batch(self.batch_size):
                 values, log_prob, entropy = self.evaluate_action(batch.observation, batch.action)
                 advantage = batch.advantage
@@ -84,6 +84,7 @@ class PPO(ActorCritic):
                     entropy_loss = -torch.mean(entropy)
 
                 loss = policy_loss + self.vf_coef * value_loss + self.entropy_coef * entropy_loss
+
                 self.optimizer.zero_grad()
                 loss.backward()
                 nn.utils.clip_grad_norm_(self.parameters(), self.max_grad_norm)
