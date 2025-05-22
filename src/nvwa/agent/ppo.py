@@ -7,6 +7,7 @@ import torch.nn.functional as F
 
 from nvwa.agent.a2c import ActorCritic
 from nvwa.data.batch import OldLogProbBatch, RolloutBatch
+from nvwa.data.buffer import RolloutBuffer
 from nvwa.distributions import Distribution
 
 
@@ -25,6 +26,8 @@ class PPO(ActorCritic):
         entropy_coef: float = 0.0,
         vf_coef: float = 0.5,
         normalize_advantages: bool = False,
+        max_gradient_step: int = 1,
+        batch_size: int = 256,
         lmbda: float = 0.9,
         eps: float = 0.2,
         max_grad_norm: float = 0.5,
@@ -45,6 +48,8 @@ class PPO(ActorCritic):
             gae_lambda,
             entropy_coef,
             vf_coef,
+            max_gradient_step,
+            batch_size,
             normalize_advantages,
             max_grad_norm,
             device,
@@ -57,36 +62,37 @@ class PPO(ActorCritic):
         self.eps = eps
         self.n_epochs = n_epochs
 
-    def learn(self, batch: OldLogProbBatch) -> None:
-        values, log_prob, entropy = self.evaluate_action(batch.observation, batch.action)
-        advantage = batch.advantage
-        if self.normalize_advantages:
-            advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
+    def learn(self, buffer: RolloutBuffer) -> None:
+        epoch_loss = {"actor_loss": 0, "critic_loss": 0, "loss": 0}
+        for step in range(self.max_gradient_step):
+            for batch in buffer.get_batch(self.batch_size):
+                values, log_prob, entropy = self.evaluate_action(batch.observation, batch.action)
+                advantage = batch.advantage
+                if self.normalize_advantages:
+                    advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
 
-        ratio = torch.exp(log_prob - batch.old_log_prob)
-        policy_loss_1 = advantage * ratio
+                ratio = torch.exp(log_prob - batch.old_log_prob)
+                policy_loss_1 = advantage * ratio
 
-        policy_loss_2 = advantage * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
-        policy_loss = -torch.min(policy_loss_1, policy_loss_2).mean()
-        value_loss = F.mse_loss(batch.returns, values)
+                policy_loss_2 = advantage * torch.clamp(ratio, 1 - self.eps, 1 + self.eps)
+                policy_loss = -torch.min(policy_loss_1, policy_loss_2).mean()
+                value_loss = F.mse_loss(batch.returns, values)
 
-        if entropy is None:
-            entropy_loss = -torch.mean(-log_prob)
-        else:
-            entropy_loss = -torch.mean(entropy)
+                if entropy is None:
+                    entropy_loss = -torch.mean(-log_prob)
+                else:
+                    entropy_loss = -torch.mean(entropy)
 
-        loss = policy_loss + self.vf_coef * value_loss + self.entropy_coef * entropy_loss
-        self.optimizer.zero_grad()
-        loss.backward()
-        nn.utils.clip_grad_norm_(self.parameters(), self.max_grad_norm)
-        self.optimizer.step()
+                loss = policy_loss + self.vf_coef * value_loss + self.entropy_coef * entropy_loss
+                self.optimizer.zero_grad()
+                loss.backward()
+                nn.utils.clip_grad_norm_(self.parameters(), self.max_grad_norm)
+                self.optimizer.step()
+                epoch_loss["actor_loss"] += policy_loss.item()
+                epoch_loss["critic_loss"] += value_loss.item()
+                epoch_loss["loss"] += loss.item()
 
-        return {
-            "actor_loss": policy_loss.item(),
-            "critic_loss": value_loss.item(),
-            "loss": loss.item(),
-            "entropy_loss": entropy_loss.item(),
-        }
+        return epoch_loss
 
     def process_rollout(self, batch: RolloutBatch) -> OldLogProbBatch:
         with torch.no_grad():

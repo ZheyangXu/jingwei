@@ -4,7 +4,7 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from nvwa.agent.base import Algorithm
+from nvwa.agent.base import BaseAgent
 from nvwa.data.batch import RolloutBatch
 from nvwa.infra.functional import get_action_dimension, get_observation_shape
 from nvwa.infra.wrapper import DataWrapper
@@ -13,7 +13,7 @@ from nvwa.infra.wrapper import DataWrapper
 class Rollout(object):
     def __init__(
         self,
-        algo: Algorithm,
+        algo: BaseAgent,
         env: gym.Env,
         max_size: int = 10000,
         n_rollout_step: Optional[int] = None,

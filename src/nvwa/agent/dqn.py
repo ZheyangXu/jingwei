@@ -7,11 +7,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from nvwa.agent.base import Algorithm
+from nvwa.agent.base import BaseAgent
 from nvwa.data.batch import Batch
 
 
-class DQN(Algorithm):
+class DQN(BaseAgent):
     def __init__(
         self,
         actor: nn.Module,

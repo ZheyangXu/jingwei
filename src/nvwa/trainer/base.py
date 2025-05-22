@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 import gymnasium as gym
 import torch
 
-from nvwa.agent.base import Algorithm
+from nvwa.agent.base import BaseAgent
 from nvwa.infra.wrapper import DataWrapper
 from nvwa.trainer.rollout import Rollout
 
@@ -12,7 +12,7 @@ from nvwa.trainer.rollout import Rollout
 class BaseTrainer(ABC):
     def __init__(
         self,
-        algo: Algorithm,
+        algo: BaseAgent,
         env: gym.Env,
         buffer_size: int = 10000,
         max_epochs: int = 200,

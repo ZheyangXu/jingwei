@@ -1,7 +1,7 @@
 import gymnasium as gym
 import torch
 
-from nvwa.agent.off_policy import OffPolicyAlgorithm
+from nvwa.agent.base import BaseAgent
 from nvwa.data.buffer import ReplayBuffer
 from nvwa.data.transition import Transition
 from nvwa.trainer.base import BaseTrainer
@@ -10,7 +10,7 @@ from nvwa.trainer.base import BaseTrainer
 class OffPolicyTrainer(BaseTrainer):
     def __init__(
         self,
-        algo: OffPolicyAlgorithm,
+        algo: BaseAgent,
         env: gym.Env,
         buffer_size: int = 10000,
         minimal_size: int = 320,

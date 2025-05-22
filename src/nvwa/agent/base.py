@@ -8,11 +8,12 @@ import torch.nn as nn
 from numpy.typing import NDArray
 
 from nvwa.data.batch import Batch, RolloutBatch
+from nvwa.data.buffer import BaseBuffer
 from nvwa.infra.functional import get_action_dimension, get_action_type
 from nvwa.infra.wrapper import DataWrapper
 
 
-class Algorithm(nn.Module, ABC):
+class BaseAgent(nn.Module, ABC):
 
     def __init__(
         self,
@@ -70,7 +71,7 @@ class Algorithm(nn.Module, ABC):
         return action
 
     @abstractmethod
-    def learn(self, batch: Batch) -> None: ...
+    def learn(self, batch: Batch | BaseBuffer) -> None: ...
 
     @abstractmethod
     def process_rollout(self, batch: RolloutBatch) -> Batch: ...
