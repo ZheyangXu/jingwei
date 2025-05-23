@@ -8,6 +8,7 @@ import torch.nn.functional as F
 
 from nvwa.agent.a2c import ActorCritic
 from nvwa.data.batch import AdvantageBatch, RolloutBatch
+from nvwa.data.buffer import RolloutBuffer
 from nvwa.distributions import Distribution
 
 
@@ -24,6 +25,8 @@ class NPG(ActorCritic):
         actor_step_size: float = 0.5,
         normalize_advantages: bool = False,
         discount_factor: float = 0.98,
+        max_gradient_step: int = 5,
+        batch_size: int = 256,
         gae_lambda: float = 0.95,
         max_batch_size: int = 256,
         reward_normalization: bool = False,
@@ -41,6 +44,8 @@ class NPG(ActorCritic):
             learning_rate=learning_rate,
             distribution=distribution,
             discount_factor=discount_factor,
+            max_gradient_step=max_gradient_step,
+            batch_size=batch_size,
             gae_lambda=gae_lambda,
             entropy_coef=0.0,
             vf_coef=0.0,
@@ -135,41 +140,44 @@ class NPG(ActorCritic):
             returns=returns,
         )
 
-    def learn(self, batch: AdvantageBatch) -> Dict[str, float]:
-        logits = self.actor(batch.observation)
-        self.distribution.prob_distribution(logits)
-        dist = self.distribution.distribution
-        log_prob = self.get_log_prob(batch.observation, batch.action)
-        actor_loss = -(log_prob * batch.advantage).mean()
-        flat_grads = self._get_flat_grad(actor_loss, self.actor, retain_graph=True).detach()
-        with torch.no_grad():
-            old_logits = self.actor(batch.observation)
-            self.distribution.prob_distribution(old_logits)
-            old_dist = self.distribution.distribution
+    def learn(self, buffer: RolloutBuffer) -> Dict[str, float]:
+        epoch_loss = {"actor_loss": 0, "critic_loss": 0, "loss": 0}
+        for step in range(self.max_gradient_step):
+            for batch in buffer.get_batch(self.batch_size):
+                logits = self.actor(batch.observation)
+                self.distribution.prob_distribution(logits)
+                dist = self.distribution.distribution
+                log_prob = self.get_log_prob(batch.observation, batch.action)
+                actor_loss = -(log_prob * batch.advantage).mean()
+                flat_grads = self._get_flat_grad(actor_loss, self.actor, retain_graph=True).detach()
+                with torch.no_grad():
+                    old_logits = self.actor(batch.observation)
+                    self.distribution.prob_distribution(old_logits)
+                    old_dist = self.distribution.distribution
 
-        kl = torch.distributions.kl_divergence(old_dist, dist).mean()
-        flat_kl_grad = self._get_flat_grad(kl, self.actor, create_graph=True)
-        search_direction = -self._conjugate_gradient(flat_grads, flat_kl_grad, max_iter=10)
+                kl = torch.distributions.kl_divergence(old_dist, dist).mean()
+                flat_kl_grad = self._get_flat_grad(kl, self.actor, create_graph=True)
+                search_direction = -self._conjugate_gradient(flat_grads, flat_kl_grad, max_iter=10)
 
-        with torch.no_grad():
-            flat_prams = torch.cat([param.view(-1) for param in self.actor.parameters()])
-            new_flat_params = flat_prams + self.actor_step_size * search_direction
-            self._set_from_flat_params(self.actor, new_flat_params)
-            new_logits = self.actor(batch.observation)
-            self.distribution.prob_distribution(new_logits)
-            # new_dist = self.distribution.distribution
+                with torch.no_grad():
+                    flat_prams = torch.cat([param.view(-1) for param in self.actor.parameters()])
+                    new_flat_params = flat_prams + self.actor_step_size * search_direction
+                    self._set_from_flat_params(self.actor, new_flat_params)
+                    new_logits = self.actor(batch.observation)
+                    self.distribution.prob_distribution(new_logits)
+                    # new_dist = self.distribution.distribution
 
-        total_value_loss = 0.0
-        for _ in range(self.optimizing_critic_iters):
-            value = self.compute_value(batch.observation)
-            value_loss = F.mse_loss(value, batch.returns)
-            self.critic_optimizer.zero_grad()
-            value_loss.backward()
-            self.critic_optimizer.step()
-            total_value_loss += value_loss.item()
-        return {
-            "loss": actor_loss.item() + total_value_loss / self.optimizing_critic_iters,
-            "actor_loss": actor_loss.item(),
-            "critic_loss": total_value_loss / self.optimizing_critic_iters,
-            "kl": kl.item(),
-        }
+                total_value_loss = 0.0
+                for _ in range(self.optimizing_critic_iters):
+                    value = self.compute_value(batch.observation)
+                    value_loss = F.mse_loss(value, batch.returns)
+                    self.critic_optimizer.zero_grad()
+                    value_loss.backward()
+                    self.critic_optimizer.step()
+                    total_value_loss += value_loss.item()
+                    epoch_loss["critic_loss"] += value_loss.item()
+                epoch_loss["actor_loss"] += actor_loss.item()
+                epoch_loss["loss"] += (
+                    actor_loss.item() + total_value_loss / self.optimizing_critic_iters
+                )
+                return epoch_loss
