@@ -1,6 +1,6 @@
 import torch
 
-from nvwa.data.batch import Batch, RolloutBatch
+from nvwa.data.batch import Batch
 
 
 dtype = torch.float32
@@ -33,37 +33,3 @@ def test_batch() -> None:
     assert batch.observation_dtype() == torch.float32
     assert batch.action_dtype() == torch.float32
     assert batch.device() == device
-
-
-def test_rollout_batch() -> None:
-    observation = torch.randn(4, 32, 32, dtype=dtype, device=device)
-    action = torch.randint(0, 2, (4,), dtype=dtype, device=device)
-    reward = torch.randn(4, dtype=dtype, device=device)
-    observation_next = torch.randn(4, 32, 32, dtype=dtype, device=device)
-    terminated = torch.randint(0, 2, (4,), dtype=torch.int64, device=device)
-    truncated = torch.randint(0, 2, (4,), dtype=torch.int64, device=device)
-    index = torch.arange(4, dtype=torch.int64, device=device)
-
-    rollout_batch = RolloutBatch(
-        observation=observation,
-        action=action,
-        reward=reward,
-        observation_next=observation_next,
-        terminated=terminated,
-        truncated=truncated,
-        episode_index=index,
-        _episode_end_position=[2],
-    )
-
-    assert isinstance(rollout_batch.observation, torch.Tensor)
-    assert isinstance(rollout_batch.action, torch.Tensor)
-    assert isinstance(rollout_batch.reward, torch.Tensor)
-    assert isinstance(rollout_batch.observation_next, torch.Tensor)
-    assert isinstance(rollout_batch.terminated, torch.Tensor)
-    assert isinstance(rollout_batch.truncated, torch.Tensor)
-    assert isinstance(rollout_batch.episode_index, torch.Tensor)
-    assert isinstance(rollout_batch._episode_end_position, list)
-    assert len(rollout_batch) == 4
-    assert rollout_batch.observation_dtype() == torch.float32
-    assert rollout_batch.action_dtype() == torch.float32
-    assert rollout_batch.device() == device
