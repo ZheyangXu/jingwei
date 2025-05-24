@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from nvwa.agent.a2c import ActorCritic
-from nvwa.data.batch import OldLogProbBatch, RolloutBatch
+from nvwa.data.batch import Batch
 from nvwa.data.buffer import RolloutBuffer
 from nvwa.distributions import Distribution
 
@@ -95,7 +95,7 @@ class PPO(ActorCritic):
 
         return epoch_loss
 
-    def process_rollout(self, batch: RolloutBatch) -> OldLogProbBatch:
+    def process_rollout(self, batch: Batch) -> Batch:
         with torch.no_grad():
             observation = self.wrapper.wrap_observation(batch.observation)
             observation_next = self.wrapper.wrap_observation(batch.observation_next)
@@ -115,15 +115,8 @@ class PPO(ActorCritic):
             values=values,
             values_next=values_next,
         )
+        batch.returns = returns
+        batch.advantage = advantage
+        batch.old_log_prob = old_log_prob
 
-        return OldLogProbBatch(
-            observation=batch.observation,
-            action=batch.action,
-            reward=batch.reward,
-            observation_next=batch.observation_next,
-            terminated=batch.terminated,
-            truncated=batch.truncated,
-            advantage=advantage,
-            returns=returns,
-            old_log_prob=old_log_prob,
-        )
+        return batch

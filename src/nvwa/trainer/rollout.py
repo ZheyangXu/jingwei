@@ -5,7 +5,7 @@ import numpy as np
 import torch
 
 from nvwa.agent.base import BaseAgent
-from nvwa.data.batch import RolloutBatch
+from nvwa.data.batch import Batch
 from nvwa.infra.functional import get_action_dimension, get_observation_shape
 from nvwa.infra.wrapper import DataWrapper
 
@@ -68,11 +68,11 @@ class Rollout(object):
         self.observation_next = np.zeros_like(self.observation)
         self.terminated = np.zeros((self.max_size, 1), dtype=np.bool_)
         self.truncated = np.zeros((self.max_size, 1), dtype=np.bool_)
-        self.episode_index = np.zeros((self.max_size,), dtype=np.int64)
+        self.episode_index = np.zeros((self.max_size, 1), dtype=np.int64)
         self.episode_end_positions = []
         self.pos = 0
 
-    def rollout(self) -> RolloutBatch:
+    def rollout(self) -> Batch:
         self.reset()
         total_reward = 0.0
         for episode in range(self.n_episodes):
@@ -100,8 +100,8 @@ class Rollout(object):
 
         return self.to_batch()
 
-    def to_batch(self) -> RolloutBatch:
-        batch = RolloutBatch(
+    def to_batch(self) -> Batch:
+        batch = Batch(
             observation=self.observation[: self.pos],
             action=self.action[: self.pos],
             reward=self.reward[: self.pos],

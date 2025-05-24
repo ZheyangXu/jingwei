@@ -1,4 +1,5 @@
 import copy
+from math import isnan
 from typing import Dict, Optional
 
 import gymnasium as gym
@@ -7,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from nvwa.agent.npg import NPG
-from nvwa.data.batch import AdvantageBatch
+from nvwa.data.batch import Batch
 from nvwa.distributions import Distribution
 
 
@@ -25,6 +26,7 @@ class TRPO(NPG):
         optimizing_critic_iters: int = 5,
         actor_step_size: float = 0.5,
         normalize_advantages: bool = False,
+        max_backtracks: int = 10,
         discount_factor: float = 0.98,
         gae_lambda: float = 0.95,
         max_batch_size: int = 256,
@@ -56,103 +58,64 @@ class TRPO(NPG):
         self.max_kl = max_kl
         self.max_batch_size = max_batch_size
         self.backtrack_coeff = backtrack_coeff
+        self.max_backtracks = max_backtracks
 
-    def hessian_matrix_vector_product(
-        self,
-        batch: AdvantageBatch,
-        old_dist: torch.distributions.Distribution,
-        vector: torch.Tensor,
-    ) -> torch.Tensor:
-        self.distribution.prob_distribution(self.actor(batch.observation))
-        new_dist = self.distribution.distribution
-        kl = torch.distributions.kl_divergence(old_dist, new_dist).mean()
-        kl_grad = torch.autograd.grad(kl, self.actor.parameters(), retain_graph=True)
-        kl_grad_vector = torch.cat([grad.view(-1) for grad in kl_grad])
-        kl_grad_vector_product = torch.dot(kl_grad_vector, vector)
-        grad2 = torch.autograd.grad(
-            kl_grad_vector_product, self.actor.parameters(), retain_graph=True
-        )
-        grad2_vector = torch.cat([grad.view(-1) for grad in grad2])
-        return grad2_vector
+    def learn(self, buffer: Batch) -> Dict[str, float]:
+        epoch_loss = {"actor_loss": 0, "critic_loss": 0, "loss": 0}
+        for step in range(self.max_gradient_step):
+            for batch in buffer.get_batch(self.batch_size):
+                with torch.no_grad():
+                    old_logits = self.actor(batch.observation)
+                    old_dist = torch.distributions.Categorical(logits=old_logits)
+                logits = self.actor(batch.observation)
+                self.distribution.prob_distribution(logits)
+                dist = self.distribution.distribution
+                ratio = (
+                    (self.get_log_prob(batch.observation, batch.action) - batch.old_log_prob)
+                    .exp()
+                    .float()
+                )
+                actor_loss = -(ratio * batch.advantage).mean()
+                flat_grads = self._get_flat_grad(actor_loss, self.actor, retain_graph=True).detach()
+                kl = torch.distributions.kl_divergence(old_dist, dist).mean() + 1e-8
+                flat_kl_grad = self._get_flat_grad(kl, self.actor, create_graph=True)
+                search_direction = -self._conjugate_gradient(flat_grads, flat_kl_grad, max_iter=10)
 
-    def conjugate_gradient(
-        self,
-        grad: torch.Tensor,
-        batch: AdvantageBatch,
-        old_dist: torch.distributions.Distribution,
-    ) -> torch.Tensor:
-        x = torch.zeros_like(grad)
-        r = grad.clone()
-        p = r.clone()
-        rdotr = torch.dot(r, r)
-        for _ in range(10):
-            Hp = self.hessian_matrix_vector_product(batch, old_dist, p)
-            alpha = rdotr / torch.dot(p, Hp)
-            x += alpha * p
-            r -= alpha * Hp
-            new_rdotr = torch.dot(r, r)
-            if new_rdotr < 1e-10:
-                break
-            beta = new_rdotr / rdotr
-            p = r + beta * p
-            rdotr = new_rdotr
-        return x
+                step_size = torch.sqrt(
+                    2
+                    * self.max_kl
+                    / (
+                        search_direction
+                        * self._matrix_vector_product(search_direction, flat_kl_grad)
+                    ).sum(0, keepdim=True)
+                )
+                with torch.no_grad():
+                    flat_prams = torch.cat([pram.data.view(-1) for pram in self.actor.parameters()])
 
-    def compute_surrogate_objective(self, batch: AdvantageBatch, actor: nn.Module) -> torch.Tensor:
-        logits = actor(batch.observation)
-        self.distribution.prob_distribution(logits)
-        log_probs = self.distribution.log_prob(batch.action)
-        ratio = torch.exp(log_probs - batch.old_log_prob)
-        return torch.mean(ratio * batch.advantage)
+                    for i in range(self.max_backtracks):
+                        new_flat_prams = flat_prams + step_size * search_direction
+                        self._set_from_flat_params(self.actor, new_flat_prams)
+                        new_logits = self.actor(batch.observation)
+                        self.distribution.prob_distribution(new_logits)
+                        new_dist = self.distribution.distribution
+                        new_dratio = (
+                            (new_dist.log_prob(batch.action) - batch.old_log_prob).exp().float()
+                        )
+                        new_actor_loss = -(new_dratio * batch.advantage).mean()
+                        kl = torch.distributions.kl_divergence(old_dist, new_dist).mean()
+                        if kl < self.max_kl and new_actor_loss < actor_loss:
+                            break
+                        if i < self.max_backtracks - 1:
+                            step_size *= self.backtrack_coeff
+                        else:
+                            self._set_from_flat_params
+                            step_size = torch.tensor([0.0])
 
-    def line_search(
-        self,
-        batch: AdvantageBatch,
-        old_dist: torch.distributions.Distribution,
-        max_vector: torch.Tensor,
-    ) -> torch.ParameterDict:
-        old_para = nn.utils.convert_parameters(self.actor.parameters())
-        old_obj = self.compute_surrogate_objective(batch, self.actor)
-        for i in range(self.max_backtrack_iters):
-            coef = self.actor_step_size**i
-            new_para = old_para + coef * max_vector
-            new_actor = copy.deepcopy(self.actor)
-            nn.utils.convert_parameters.vector_to_parameters(new_para, new_actor.parameters())
-            self.distribution.prob_distribution(new_actor(batch.observation))
-            new_dist = self.distribution.distribution
-            kl_div = torch.mean(torch.distributions.kl_divergence(old_dist, new_dist))
-            new_obj = self.compute_surrogate_objective(batch, new_actor)
-            if new_obj > old_obj and kl_div < self.max_kl:
-                return new_para
-        return old_para
+                for _ in range(self.optimizing_critic_iters):
+                    value = self.critic(batch.observation)
+                    value_loss = F.mse_loss(value, batch.returns)
+                    self.critic_optimizer.zero_grad()
+                    value_loss.backward()
+                    self.critic_optimizer.step()
 
-    def policy_learn(
-        self, batch: AdvantageBatch, old_dist: torch.distributions.Distribution
-    ) -> Dict[str, float]:
-        surrogate_objective = self.compute_surrogate_objective(batch, self.actor)
-        grads = torch.autograd.grad(surrogate_objective, self.actor.parameters())
-        obj_grad = torch.cat([grad.view(-1) for grad in grads]).detach()
-
-        descent_direction = self.conjugate_gradient(obj_grad, batch, old_dist)
-        Hd = self.hessian_matrix_vector_product(batch, old_dist, descent_direction)
-        max_coef = torch.sqrt(2 * self.max_kl / (torch.dot(descent_direction, Hd) + 1e-8))
-        new_para = self.line_search(batch, old_dist, descent_direction * max_coef)
-        nn.utils.convert_parameters.vector_to_parameters(new_para, self.actor.parameters())
-
-    def learn(self, batch: AdvantageBatch) -> Dict[str, float]:
-        td_target = batch.reward + self.gamma * self.compute_value(batch.observation_next) * (
-            1 - torch.logical_or(batch.terminated, batch.truncated).float()
-        )
-        td_delta = td_target - self.compute_value(batch.observation)
-        self.distribution.prob_distribution(self.actor(batch.observation))
-        old_dist = self.distribution.distribution
-        critic_loss = torch.mean(F.mse_loss(td_delta, self.compute_value(batch.observation)))
-        self.optimizer.zero_grad()
-        critic_loss.backward()
-        self.optimizer.step()
-        self.policy_learn(batch, old_dist)
-        return {
-            "loss": critic_loss.item(),
-            "actor_loss": 0.0,
-            "critic_loss": critic_loss.item(),
-        }
+        return epoch_loss
