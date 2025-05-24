@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 from numpy.typing import NDArray
 
-from nvwa.data.batch import Batch, RolloutBatch
+from nvwa.data.batch import Batch
 from nvwa.data.buffer import BaseBuffer
 from nvwa.infra.functional import get_action_dimension, get_action_type
 from nvwa.infra.wrapper import DataWrapper
@@ -74,11 +74,11 @@ class BaseAgent(nn.Module, ABC):
     def learn(self, batch: Batch | BaseBuffer) -> None: ...
 
     @abstractmethod
-    def process_rollout(self, batch: RolloutBatch) -> Batch: ...
+    def process_rollout(self, batch: Batch) -> Batch: ...
 
     def compute_episode_return(
         self,
-        batch: RolloutBatch,
+        batch: Batch,
         values: Optional[NDArray] = None,
         values_next: Optional[NDArray] = None,
         gamma: float = 0.99,

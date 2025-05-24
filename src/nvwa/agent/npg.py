@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Any, Dict, Literal, Optional
 
 import gymnasium as gym
@@ -7,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from nvwa.agent.a2c import ActorCritic
-from nvwa.data.batch import AdvantageBatch, RolloutBatch
+from nvwa.data.batch import Batch
 from nvwa.data.buffer import RolloutBuffer
 from nvwa.distributions import Distribution
 
@@ -107,7 +108,7 @@ class NPG(ActorCritic):
             rdotr = new_rdotr
         return x
 
-    def process_rollout(self, batch: RolloutBatch) -> AdvantageBatch:
+    def process_rollout(self, batch: Batch) -> Batch:
         with torch.no_grad():
             value = self.wrapper.to_numpy(
                 self.compute_value(self.wrapper.wrap_observation(batch.observation))
@@ -115,45 +116,39 @@ class NPG(ActorCritic):
             value_next = self.wrapper.to_numpy(
                 self.compute_value(self.wrapper.wrap_observation(batch.observation_next))
             )
-            returns, advantages = self.compute_episode_return(
+            returns, advantage = self.compute_episode_return(
                 batch,
                 values=value,
                 values_next=value_next,
                 gamma=self.discount_factor,
                 gae_lambda=self.gae_lambda,
             )
-            old_log_prob = self.get_log_prob(
-                self.wrapper.wrap_observation(batch.observation),
-                self.wrapper.wrap_action(batch.action),
-            )
+            logits = self.actor(self.wrapper.wrap_observation(batch.observation))
+            self.distribution.prob_distribution(logits)
+            dist = deepcopy(self.distribution.distribution)
+            old_log_prob = self.distribution.log_prob(self.wrapper.wrap_action(batch.action))
             old_log_prob = self.wrapper.to_numpy(old_log_prob).reshape(-1, 1)
-
-        return AdvantageBatch(
-            observation=batch.observation,
-            action=batch.action,
-            reward=batch.reward,
-            terminated=batch.terminated,
-            truncated=batch.truncated,
-            observation_next=batch.observation_next,
-            old_log_prob=old_log_prob,
-            advantage=advantages,
-            returns=returns,
-        )
+            batch.returns = returns
+            batch.advantage = advantage
+            batch.old_log_prob = old_log_prob
+            batch.dist = dist
+        return batch
 
     def learn(self, buffer: RolloutBuffer) -> Dict[str, float]:
         epoch_loss = {"actor_loss": 0, "critic_loss": 0, "loss": 0}
         for step in range(self.max_gradient_step):
             for batch in buffer.get_batch(self.batch_size):
+                with torch.no_grad():
+                    old_logits = self.actor(batch.observation)
+                    old_dist = torch.distributions.Categorical(logits=old_logits)
                 logits = self.actor(batch.observation)
                 self.distribution.prob_distribution(logits)
                 dist = self.distribution.distribution
                 log_prob = self.get_log_prob(batch.observation, batch.action)
                 actor_loss = -(log_prob * batch.advantage).mean()
+                self.optimizer.zero_grad()
+                actor_loss.backward()
                 flat_grads = self._get_flat_grad(actor_loss, self.actor, retain_graph=True).detach()
-                with torch.no_grad():
-                    old_logits = self.actor(batch.observation)
-                    self.distribution.prob_distribution(old_logits)
-                    old_dist = self.distribution.distribution
 
                 kl = torch.distributions.kl_divergence(old_dist, dist).mean()
                 flat_kl_grad = self._get_flat_grad(kl, self.actor, create_graph=True)
@@ -180,4 +175,4 @@ class NPG(ActorCritic):
                 epoch_loss["loss"] += (
                     actor_loss.item() + total_value_loss / self.optimizing_critic_iters
                 )
-                return epoch_loss
+        return epoch_loss

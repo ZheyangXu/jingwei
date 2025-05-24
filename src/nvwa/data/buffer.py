@@ -5,7 +5,7 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from nvwa.data.batch import AdvantageBatch, Batch
+from nvwa.data.batch import Batch
 from nvwa.data.transition import RolloutTransition, Transition
 from nvwa.infra.functional import get_action_dimension, get_observation_shape
 from nvwa.infra.wrapper import DataWrapper
@@ -55,6 +55,7 @@ class BaseBuffer(ABC):
         self.observation_next = np.zeros_like(self.observation)
         self.terminated = np.zeros((self.buffer_size, 1), dtype=np.bool_)
         self.truncated = np.zeros((self.buffer_size, 1), dtype=np.bool_)
+        self._episode_end_position = []
         return self.size()
 
     def __getitem__(self, key: str) -> torch.Tensor | np.ndarray:
@@ -91,11 +92,19 @@ class BaseBuffer(ABC):
     def add(self, batch: Batch) -> int:
         end_position = self.pos + len(batch)
         for key in batch.keys():
+            batch_data = batch.get(key)
+            if batch_data is None:
+                continue
             if not hasattr(self, key):
                 setattr(self, key, np.zeros((self.buffer_size, 1), dtype=batch.get(key).dtype))
             data = getattr(self, key)
-            data[self.pos : end_position] = batch.get(key)
+            if isinstance(data, List):
+                data.append(batch_data)
+            else:
+                data[self.pos : end_position] = batch_data
             setattr(self, key, data)
+        if batch._episode_end_position is not None:
+            self._episode_end_position.extend(batch._episode_end_position)
         self.pos = end_position
         if self.pos >= self.buffer_size:
             self.full = True
@@ -161,8 +170,12 @@ class RolloutBuffer(BaseBuffer):
         super()._init_buffer()
         self.value = np.zeros((self.buffer_size, 1), dtype=np.float32)
         self.old_log_prob = np.zeros((self.buffer_size, 1), dtype=np.float32)
-        self.advantages = np.zeros((self.buffer_size, 1), dtype=np.float32)
+        self.advantage = np.zeros((self.buffer_size, 1), dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, 1), dtype=np.float32)
+        self.episode_index = np.zeros((self.buffer_size, 1), dtype=np.int32)
+        self.old_log_prob = np.zeros((self.buffer_size, 1), dtype=np.float32)
+        self.dist = []
+        self._episode_end_position = []
         return self.size()
 
     def put(self, rollout_transition: RolloutTransition) -> int:
@@ -171,8 +184,8 @@ class RolloutBuffer(BaseBuffer):
         self.log_prob[self.pos] = rollout_transition.log_prob
         return self.size()
 
-    def _get_batch(self, batch_indices: List[int]) -> AdvantageBatch:
-        return AdvantageBatch(
+    def _get_batch(self, batch_indices: List[int], episode: int = 0) -> Batch:
+        return Batch(
             observation=self.wrapper.wrap_observation(self.observation[batch_indices]),
             action=self.wrapper.wrap_action(self.action[batch_indices]),
             reward=self.wrapper.to_tensor(self.reward[batch_indices]),
@@ -182,14 +195,20 @@ class RolloutBuffer(BaseBuffer):
             advantage=self.wrapper.to_tensor(self.advantage[batch_indices]),
             returns=self.wrapper.to_tensor(self.returns[batch_indices]),
             old_log_prob=self.wrapper.to_tensor(self.old_log_prob[batch_indices]),
+            dist=self.dist[episode],
         )
 
-    def get_batch(self, batch_size: int) -> Generator[AdvantageBatch, None, None]:
+    def get_batch(self, batch_size: int) -> Generator[Batch, None, None]:
         indices = np.random.permutation(self.size())
         start_index = 0
         while start_index < self.size():
             yield self._get_batch(indices[start_index : start_index + batch_size])
             start_index += batch_size
+
+    def get_episode_batch(self) -> Batch:
+        for idx, end_position in enumerate(self._episode_end_position):
+            batch_indices = np.arange(end_position)
+            yield self._get_batch(batch_indices, idx)
 
     def compute_return_and_advantage(
         self,
@@ -209,5 +228,5 @@ class RolloutBuffer(BaseBuffer):
                 next_value = self.value[t + 1]
             delta = self.reward[t] + gamma * next_value * next_non_terminal - self.value[t]
             last_advantage = delta + gamma * gae_lambda * next_non_terminal * last_advantage
-            self.advantages[t] = last_advantage
-        self.returns = self.advantages + self.value
+            self.advantage[t] = last_advantage
+        self.returns = self.advantage + self.value

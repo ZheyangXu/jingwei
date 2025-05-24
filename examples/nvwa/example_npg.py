@@ -47,8 +47,8 @@ class PolicyContinuousNet(nn.Module):
 
 def main():
     env = gym.make("CartPole-v1")
-    policy_net = PolicyNet(env.observation_space.shape[0], 128, env.action_space.n)
-    value_net = ValueNet(env.observation_space.shape[0], 128)
+    policy_net = PolicyNet(env.observation_space.shape[0], 64, env.action_space.n)
+    value_net = ValueNet(env.observation_space.shape[0], 64)
 
     algo = NPG(policy_net, value_net, env.action_space, env.observation_space, 0.001)
 

@@ -6,7 +6,8 @@ import torch.nn as nn
 import torch.optim as optim
 
 from nvwa.agent.base import BaseAgent
-from nvwa.data.batch import ReturnsBatch, RolloutBatch
+from nvwa.data.batch import Batch
+from nvwa.data.buffer import RolloutBuffer
 from nvwa.distributions import (
     CategoricalDistribution,
     Distribution,
@@ -23,6 +24,8 @@ class PolicyGradientAlgo(BaseAgent):
         learning_rate: float = 0.001,
         distribuiton: Optional[Distribution] = None,
         discount_factor: float = 0.98,
+        max_gradient_step: int = 5,
+        batch_size: int = 256,
         gae_lambda: float = 0.95,
         reward_normalization: bool = False,
         is_action_scaling: bool = False,
@@ -49,6 +52,8 @@ class PolicyGradientAlgo(BaseAgent):
         self.dtype = dtype
         self.device = device
         self.max_grad_norm = max_grad_norm
+        self.max_gradient_step = max_gradient_step
+        self.batch_size = batch_size
 
     def _set_distribution(self, distribution: Optional[Distribution]) -> None:
         if distribution is None:
@@ -84,26 +89,23 @@ class PolicyGradientAlgo(BaseAgent):
         log_prob = self.distribution.log_prob(action)
         return action, torch.zeros_like(log_prob), log_prob
 
-    def learn(self, batch: ReturnsBatch) -> None:
-        log_prob = self.get_log_prob(batch.observation, batch.action)
-        loss = -(log_prob * batch.returns).mean()
-        self.optimizer.zero_grad()
-        loss.backward()
-        if self.max_grad_norm > 0:
-            nn.utils.clip_grad_norm_(self.parameters(), self.max_grad_norm)
-        self.optimizer.step()
-        return {"loss": loss.item()}
+    def learn(self, buffer: RolloutBuffer) -> None:
+        epoch_loss = {"loss": 0, "actor_loss": 0, "critic_loss": 0}
+        for _ in range(self.max_gradient_step):
+            for batch in buffer.get_batch(self.batch_size):
+                log_prob = self.get_log_prob(batch.observation, batch.action)
+                loss = -(log_prob * batch.returns).mean()
+                self.optimizer.zero_grad()
+                loss.backward()
+                if self.max_grad_norm > 0:
+                    nn.utils.clip_grad_norm_(self.parameters(), self.max_grad_norm)
+                self.optimizer.step()
+                epoch_loss["loss"] += loss.item()
+        return epoch_loss
 
-    def process_rollout(self, batch: RolloutBatch) -> ReturnsBatch:
+    def process_rollout(self, batch: Batch) -> Batch:
         returns, _ = self.compute_episode_return(
             batch, gamma=self.discount_factor, gae_lambda=self.gae_lambda
         )
-        return ReturnsBatch(
-            observation=batch.observation,
-            action=batch.action,
-            reward=batch.reward,
-            observation_next=batch.observation_next,
-            terminated=batch.terminated,
-            truncated=batch.truncated,
-            returns=returns,
-        )
+        batch.returns = returns
+        return batch

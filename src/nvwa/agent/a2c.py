@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from nvwa.agent.base import BaseAgent
-from nvwa.data.batch import AdvantageBatch, RolloutBatch
+from nvwa.data.batch import Batch
 from nvwa.data.buffer import RolloutBuffer
 from nvwa.distributions import (
     CategoricalDistribution,
@@ -151,24 +151,10 @@ class ActorCritic(BaseAgent):
 
         return epoch_loss
 
-    def process_rollout(self, batch: RolloutBatch) -> AdvantageBatch:
-        returns, advantages = self.compute_episode_return(
+    def process_rollout(self, batch: Batch) -> Batch:
+        returns, advantage = self.compute_episode_return(
             batch, gamma=self.discount_factor, gae_lambda=self.gae_lambda
         )
-
-        return AdvantageBatch(
-            observation=batch.observation,
-            action=batch.action,
-            reward=batch.reward,
-            observation_next=batch.observation_next,
-            terminated=batch.terminated,
-            truncated=batch.truncated,
-            advantage=advantages,
-            returns=returns,
-            old_log_prob=None,
-        )
-
-    def to(self, device: torch.device) -> None:
-        self._device = device
-        self.actor.to(device)
-        self.critic.to(device)
+        batch.returns = returns
+        batch.advantage = advantage
+        return batch
