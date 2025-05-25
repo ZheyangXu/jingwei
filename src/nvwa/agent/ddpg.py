@@ -2,7 +2,6 @@ from copy import deepcopy
 from typing import Dict, Literal, Optional
 
 import gymnasium as gym
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -10,7 +9,6 @@ import torch.optim as optim
 
 from nvwa.agent.base import BaseAgent
 from nvwa.data.batch import Batch
-from nvwa.data.buffer import ReplayBuffer
 
 
 class DDPG(BaseAgent):
