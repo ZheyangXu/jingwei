@@ -19,10 +19,9 @@ class PolicyNetContinuous(torch.nn.Module):
         mu = self.fc_mu(x)
         std = F.softplus(self.fc_std(x))
         dist = torch.distributions.Normal(mu, std)
-        normal_sample = dist.rsample()  # rsample()是重参数化采样
+        normal_sample = dist.rsample()
         log_prob = dist.log_prob(normal_sample)
         action = torch.tanh(normal_sample)
-        # 计算tanh_normal分布的对数概率密度
         log_prob = log_prob - torch.log(1 - torch.tanh(action).pow(2) + 1e-7)
         action = action * self.action_bound
         return action, log_prob
