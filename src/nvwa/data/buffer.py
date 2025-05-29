@@ -195,7 +195,7 @@ class RolloutBuffer(BaseBuffer):
             advantage=self.wrapper.to_tensor(self.advantage[batch_indices]),
             returns=self.wrapper.to_tensor(self.returns[batch_indices]),
             old_log_prob=self.wrapper.to_tensor(self.old_log_prob[batch_indices]),
-            dist=self.dist[episode],
+            dist=self.dist[episode] if episode < len(self.dist) else None,
         )
 
     def get_batch(self, batch_size: int) -> Generator[Batch, None, None]:
@@ -205,7 +205,7 @@ class RolloutBuffer(BaseBuffer):
             yield self._get_batch(indices[start_index : start_index + batch_size])
             start_index += batch_size
 
-    def get_episode_batch(self) -> Batch:
+    def get_episode_batch(self) -> Generator[Batch, None, None]:
         for idx, end_position in enumerate(self._episode_end_position):
             batch_indices = np.arange(end_position)
             yield self._get_batch(batch_indices, idx)
