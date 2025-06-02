@@ -72,10 +72,23 @@ export default withMermaid({
                 {
                   text: "Policy-based Methods",
                   link: "/reinforcement_learning/basic/policy_based",
+                  items: [
+                    {
+                      text: "Policy Iteration",
+                      link: "/reinforcement_learning/basic/policy_based/policy_iteration",
+                    },
+                    {
+                      text: "Policy Gradients",
+                      link: "/reinforcement_learning/basic/policy_based/policy_gradients",
+                    },
+                  ],
                 },
               ],
             },
-            { text: "深度强化学习", link: "/reinforcement_learning/deeprl" },
+            {
+              text: "深度强化学习",
+              link: "/reinforcement_learning/deeprl",
+            },
           ],
         },
       ],
