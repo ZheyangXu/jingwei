@@ -81,6 +81,10 @@ export default withMermaid({
                       text: "Policy Gradients",
                       link: "/reinforcement_learning/basic/policy_based/policy_gradients",
                     },
+                    {
+                      text: "Actor Critic",
+                      link: "/reinforcement_learning/basic/policy_based/actor_critic",
+                    },
                   ],
                 },
               ],
