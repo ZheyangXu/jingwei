@@ -87,6 +87,10 @@ export default withMermaid({
                     },
                   ],
                 },
+                {
+                  text: "Modeling and Abstraction for MDPs",
+                  link: "/reinforcement_learning/basic/modeling_and_abstraction_for_MDPs",
+                },
               ],
             },
             {
