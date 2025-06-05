@@ -37,9 +37,6 @@ class Rollout(object):
         self.wrapper = DataWrapper(
             self.env.observation_space, self.env.action_space, torch.float32, self.device
         )
-        print(
-            f"Rollout initialized with max_size: {self.max_size}, n_rollout_step: {self.n_rollout_step}"
-        )
 
     def data_keys(self) -> List[str]:
         return [
