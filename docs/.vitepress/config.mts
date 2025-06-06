@@ -97,6 +97,24 @@ export default withMermaid({
               text: "深度强化学习",
               link: "/reinforcement_learning/deeprl",
             },
+            {
+              text: "多智能体强化学习",
+              link: "/reinforcement_learning/multi_agent_rl",
+              items: [
+                {
+                  text: "标准形式博弈",
+                  link: "/reinforcement_learning/multi_agent_rl/normal_form_game",
+                },
+                {
+                  text: "Extensive Form Game",
+                  link: "/reinforcement_learning/multi_agent_rl/extensive_form_game",
+                },
+                {
+                  text: "Multi-agent Games",
+                  link: "/reinforcement_learning/multi_agent_rl/multi_agent_games",
+                },
+              ],
+            },
           ],
         },
       ],
