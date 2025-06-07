@@ -36,7 +36,7 @@ export default withMermaid({
               link: "/reinforcement_learning/basic",
               items: [
                 {
-                  text: "Markov Decision Process",
+                  text: "马尔可夫决策过程",
                   link: "/reinforcement_learning/basic/mdp",
                 },
                 {
@@ -52,11 +52,11 @@ export default withMermaid({
                       link: "/reinforcement_learning/basic/value_based/multi_armed_bandit",
                     },
                     {
-                      text: "TD",
+                      text: "时序差分",
                       link: "/reinforcement_learning/basic/value_based/td",
                     },
                     {
-                      text: "n-step TD",
+                      text: "多步时序差分",
                       link: "/reinforcement_learning/basic/value_based/n_step_td",
                     },
                     {
@@ -70,15 +70,15 @@ export default withMermaid({
                   ],
                 },
                 {
-                  text: "Policy-based Methods",
+                  text: "基于策略的方法",
                   link: "/reinforcement_learning/basic/policy_based",
                   items: [
                     {
-                      text: "Policy Iteration",
+                      text: "策略迭代",
                       link: "/reinforcement_learning/basic/policy_based/policy_iteration",
                     },
                     {
-                      text: "Policy Gradients",
+                      text: "策略梯度",
                       link: "/reinforcement_learning/basic/policy_based/policy_gradients",
                     },
                     {
@@ -88,7 +88,7 @@ export default withMermaid({
                   ],
                 },
                 {
-                  text: "Modeling and Abstraction for MDPs",
+                  text: "MDPs 的建模与抽象",
                   link: "/reinforcement_learning/basic/modeling_and_abstraction_for_MDPs",
                 },
               ],
@@ -106,11 +106,15 @@ export default withMermaid({
                   link: "/reinforcement_learning/multi_agent_rl/normal_form_game",
                 },
                 {
-                  text: "Extensive Form Game",
+                  text: "扩展形式博弈",
                   link: "/reinforcement_learning/multi_agent_rl/extensive_form_game",
                 },
                 {
-                  text: "Multi-agent Games",
+                  text: "多智能体强化学习",
+                  link: "/reinforcement_learning/multi_agent_rl/multi_agent_rl",
+                },
+                {
+                  text: "多能体博弈的建模与抽象",
                   link: "/reinforcement_learning/multi_agent_rl/multi_agent_games",
                 },
               ],
