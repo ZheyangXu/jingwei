@@ -22,6 +22,7 @@ export default withMermaid({
           { text: "离线强化学习", link: "/reinforcement_learning/offlinerl" },
         ],
       },
+      { text: "BLOG", link: "/blog" },
       { text: "文档", link: "/docs" },
       { text: "API", link: "/api" },
     ],
