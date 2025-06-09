@@ -97,6 +97,50 @@ export default withMermaid({
             {
               text: "深度强化学习",
               link: "/reinforcement_learning/deeprl",
+              items: [
+                {
+                  text: "DQN算法及其变种",
+                  link: "/reinforcement_learning/deeprl/dqn",
+                },
+                {
+                  text: "策略梯度算法",
+                  link: "/reinforcement_learning/deeprl/policy_gradient",
+                },
+                {
+                  text: "自然策略梯度算法",
+                  link: "/reinforcement_learning/deeprl/npg",
+                },
+                {
+                  text: "Actor-Critic算法",
+                  link: "/reinforcement_learning/deeprl/actor_critic",
+                },
+
+                { text: "PPO算法", link: "/reinforcement_learning/deeprl/ppo" },
+                {
+                  text: "DDPG算法",
+                  link: "/reinforcement_learning/deeprl/ddpg",
+                },
+                { 
+                  text: "SAC算法", 
+                  link: "/reinforcement_learning/deeprl/sac" 
+                },
+                {
+                  text: "Rainbow算法",
+                  link: "/reinforcement_learning/deeprl/rainbow",
+                },
+                {
+                  text: "C51算法",
+                  link: "/reinforcement_learning/deeprl/c51",
+                },
+                {
+                  text: "HER",
+                  link: "/reinforcement_learning/deeprl/her",
+                }
+              ],
+            },
+            {
+              text: "离线强化学习",
+              link: "/reinforcement_learning/offlinerl",
             },
             {
               text: "多智能体强化学习",
