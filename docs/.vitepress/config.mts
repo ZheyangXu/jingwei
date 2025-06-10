@@ -111,25 +111,25 @@ export default withMermaid({
                   link: "/reinforcement_learning/deeprl/npg",
                 },
                 {
-                  text: "Actor-Critic算法",
+                  text: "Actor-Critic 算法",
                   link: "/reinforcement_learning/deeprl/actor_critic",
                 },
 
-                { text: "PPO算法", link: "/reinforcement_learning/deeprl/ppo" },
+                { text: "PPO 算法", link: "/reinforcement_learning/deeprl/ppo" },
                 {
-                  text: "DDPG算法",
+                  text: "DDPG 算法",
                   link: "/reinforcement_learning/deeprl/ddpg",
                 },
                 { 
-                  text: "SAC算法", 
+                  text: "SAC 算法", 
                   link: "/reinforcement_learning/deeprl/sac" 
                 },
                 {
-                  text: "Rainbow算法",
+                  text: "Rainbow 算法",
                   link: "/reinforcement_learning/deeprl/rainbow",
                 },
                 {
-                  text: "C51算法",
+                  text: "C51 算法",
                   link: "/reinforcement_learning/deeprl/c51",
                 },
                 {
@@ -141,6 +141,20 @@ export default withMermaid({
             {
               text: "离线强化学习",
               link: "/reinforcement_learning/offlinerl",
+              items: [
+                { 
+                  text: "BCQ 算法",
+                  link: "/reinforcement_learning/offlinerl/bcq"
+                },
+                {
+                  text: "CQL 算法",
+                  link: "/reinforcement_learning/offlinerl/cql",
+                },
+                {
+                  text: "Diffusion 模型",
+                  link: "/reinforcement_learning/offlinerl/diffusion",
+                }
+              ]
             },
             {
               text: "多智能体强化学习",
