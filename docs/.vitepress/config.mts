@@ -157,6 +157,24 @@ export default withMermaid({
               ]
             },
             {
+              text: "模仿学习",
+              link: "/reinforcement_learning/imitation_learning",
+              items: [
+                {
+                  text: "行为克隆",
+                  link: "/reinforcement_learning/imitation_learning/behavior_cloning",
+                },
+                {
+                  text: "逆强化学习",
+                  link: "/reinforcement_learning/imitation_learning/inverse_rl",
+                },
+                {
+                  text: "生成对抗模仿学习",
+                  link: "/reinforcement_learning/imitation_learning/gail",
+                },
+              ]
+            },
+            {
               text: "多智能体强化学习",
               link: "/reinforcement_learning/multi_agent_rl",
               items: [
@@ -181,6 +199,20 @@ export default withMermaid({
           ],
         },
       ],
+      "/blog/": [
+        {
+          text: "离线强化学习",
+          link: "/blog/offlinerl",
+        },
+        {
+          text: "模仿学习",
+          link: "/blog/imitation_learning",
+        },
+        {
+          text: "MPC",
+          link: "/blog/mpc",
+        }
+      ]
     },
     socialLinks: [
       { icon: "github", link: "https://github.com/ZheyangXu/jingwei" },
