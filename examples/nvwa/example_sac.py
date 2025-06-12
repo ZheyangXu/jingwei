@@ -3,6 +3,7 @@ import torch
 import torch.nn.functional as F
 
 from nvwa.agent.sac import SAC
+from nvwa.infra.module import QValueNetContinuous
 from nvwa.trainer import OffPolicyTrainer
 
 
@@ -25,20 +26,6 @@ class PolicyNetContinuous(torch.nn.Module):
         log_prob = log_prob - torch.log(1 - torch.tanh(action).pow(2) + 1e-7)
         action = action * self.action_bound
         return action, log_prob
-
-
-class QValueNetContinuous(torch.nn.Module):
-    def __init__(self, observation_dim: int, hidden_dim: int, action_dim: int):
-        super(QValueNetContinuous, self).__init__()
-        self.fc1 = torch.nn.Linear(observation_dim + action_dim, hidden_dim)
-        self.fc2 = torch.nn.Linear(hidden_dim, hidden_dim)
-        self.fc_out = torch.nn.Linear(hidden_dim, 1)
-
-    def forward(self, x, a):
-        cat = torch.cat([x, a], dim=1)
-        x = F.relu(self.fc1(cat))
-        x = F.relu(self.fc2(x))
-        return self.fc_out(x)
 
 
 def main() -> None:
