@@ -15,12 +15,7 @@ class Tracking(object):
     def __setattr__(self, key: str, value: List[float]) -> None:
         self.__dict__[key] = value
 
-    def tracking(
-        self,
-        event: Dict[str, float],
-        episode: Optional[int] = None,
-        global_step: Optional[int] = None,
-    ) -> None:
+    def tracking(self, event: Dict[str, float]) -> None:
         """
         Track an event with optional episode number.
 
@@ -29,7 +24,8 @@ class Tracking(object):
             episode (Optional[int]): The episode number, if applicable.
             global_step (Optional[int]): The global step number, if applicable.
         """
-        pass
+        for key, value in event.items():
+            self.append(key, value)
 
     def append(self, key: str, value: float) -> None:
         """
@@ -39,7 +35,55 @@ class Tracking(object):
             key (str): The key for the value.
             value (float): The value to append.
         """
-        pass
+        if key not in self.__dict__:
+            self.__dict__[key] = []
+        self.__dict__[key].append(value)
+
+    @property
+    def episode(self) -> int:
+        """
+        Get the current episode number.
+
+        Returns:
+            int: The current episode number.
+        """
+        return self._episode
+
+    @episode.setter
+    def episode(self, value: int) -> None:
+        """
+        Set the current episode number.
+
+        Args:
+            value (int): The episode number to set.
+        """
+        self._episode = value
+
+    @property
+    def global_step(self) -> int:
+        """
+        Get the current global step number.
+
+        Returns:
+            int: The current global step number.
+        """
+        return self._global_step
+
+    @global_step.setter
+    def global_step(self, value: int) -> None:
+        """
+        Set the current global step number.
+
+        Args:
+            value (int): The global step number to set.
+        """
+        self._global_step = value
+
+    def step(self) -> None:
+        self._global_step += 1
+
+    def episode_step(self) -> None:
+        self._episode += 1
 
     def to_dict(self) -> Dict[str, float]:
         """
