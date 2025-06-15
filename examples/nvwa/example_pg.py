@@ -1,7 +1,7 @@
 import gymnasium as gym
 import torch
 
-from nvwa.agent.pg import PolicyGradientAlgo
+from nvwa.agent.pg import PolicyGradient
 from nvwa.infra.module import PolicyNet
 from nvwa.trainer import OnPolicyTrainer
 
@@ -10,7 +10,7 @@ def main():
     env = gym.make("CartPole-v1")
     policy_net = PolicyNet(env.observation_space.shape[0], 128, env.action_space.n)
 
-    pg = PolicyGradientAlgo(policy_net, env.action_space, env.observation_space)
+    pg = PolicyGradient(policy_net, env.action_space, env.observation_space)
 
     trainer = OnPolicyTrainer(
         pg,
