@@ -15,7 +15,7 @@ from nvwa.distributions import (
 )
 
 
-class PolicyGradientAlgo(BaseAgent):
+class PolicyGradient(BaseAgent):
     def __init__(
         self,
         actor: nn.Module,
@@ -92,15 +92,17 @@ class PolicyGradientAlgo(BaseAgent):
     def learn(self, buffer: RolloutBuffer) -> None:
         epoch_loss = {"loss": 0, "actor_loss": 0, "critic_loss": 0}
         for _ in range(self.max_gradient_step):
-            for batch in buffer.get_batch(self.batch_size):
-                log_prob = self.get_log_prob(batch.observation, batch.action)
-                loss = -(log_prob * batch.returns).mean()
+            for batch in buffer.get_episode_batch():
                 self.optimizer.zero_grad()
-                loss.backward()
-                if self.max_grad_norm > 0:
-                    nn.utils.clip_grad_norm_(self.parameters(), self.max_grad_norm)
+                returns = 0
+                for i in reversed(range(len(batch.reward))):
+                    returns = self.discount_factor * returns + batch.reward[i]
+                    log_prob = self.get_log_prob(batch.observation[i], batch.action[i])
+                    loss = -log_prob * returns
+                    loss.backward()
+                    epoch_loss["loss"] += loss.item()
                 self.optimizer.step()
-                epoch_loss["loss"] += loss.item()
+
         return epoch_loss
 
     def process_rollout(self, batch: Batch) -> Batch:
