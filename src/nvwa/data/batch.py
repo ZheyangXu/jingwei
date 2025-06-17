@@ -6,7 +6,7 @@ import torch
 from numpy.typing import NDArray
 
 
-@dataclass()
+@dataclass
 class Batch(object):
     observation: torch.Tensor | NDArray
     action: torch.Tensor | NDArray
