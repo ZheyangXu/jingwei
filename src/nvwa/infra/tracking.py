@@ -1,5 +1,4 @@
-from ast import List
-from typing import Dict, Iterable, Optional
+from typing import Dict, Iterable, List
 
 
 class Tracking(object):
